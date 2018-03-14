@@ -35,8 +35,8 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <summary>
 		/// Simulates Collision of players Position which is currently on any obstacle (position is already predicted)
 		/// </summary>
-		/// <param name="position"></param>
-		/// <param name="oldPosition"></param>
+		/// <param name="position">new position (obstacle if collision is unavoidable)</param>
+		/// <param name="oldPosition">Position of player</param>
 		/// <param name="oldDirection"></param>
 		/// <returns></returns>
 		public static Simulation SimulateCollision(this Position position, Position oldPosition, Direction oldDirection)
@@ -48,8 +48,6 @@ namespace DrunkenMonk.ConsoleHelpers
 			 * Make BasePosition pointing to obstacle, not player
 			 */
 
-			Position newPosition = new Position(position.X, position.Y);
-
 			Random random = new Random(DateTime.Now.Millisecond);
 
 			// Generates 20% chance int 1-5
@@ -58,7 +56,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			return new Simulation
 			{
-				BasePosition = oldPosition,
+				BasePosition = position,
 				Direction = oldDirection.Reverse(),
 				Difference = punchChance == 1
 					? random.Next(3, 5)	// Punch
