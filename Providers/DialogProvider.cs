@@ -4,11 +4,18 @@ using System.Linq;
 using System.Threading.Tasks;
 using DrunkenMonk.Data;
 using DrunkenMonk.ConsoleHelpers;
+using NLog;
 
 namespace DrunkenMonk.Providers
 {
 	public class DialogProvider
 	{
+		private readonly Logger logger;
+
+		public DialogProvider()
+		{
+			logger = LogManager.GetCurrentClassLogger();
+		}
 
 		/// <summary>
 		/// Clears Cosole Screen and draws menu of provided options
@@ -18,6 +25,8 @@ namespace DrunkenMonk.Providers
 		/// <returns></returns>
 		public async Task<TReturnType> AskUser<TReturnType>(Menu<TReturnType> menu)
 		{
+			logger.Trace($"{nameof(AskUser)} method called");
+
 			Console.Clear();
 
 			PaintBrush brush = new PaintBrush();
@@ -33,22 +42,22 @@ namespace DrunkenMonk.Providers
 				switch (key)
 				{
 					case ConsoleKey.UpArrow:
-					{
-						// overflow validation
-						if (menu.Options.ToList().IndexOf(menu.SelectedOption) == 0)
-							continue;
+						{
+							// overflow validation
+							if (menu.Options.ToList().IndexOf(menu.SelectedOption) == 0)
+								continue;
 
-						brush.SelectOption(menu, Menu<TReturnType>.OptionChangeDirection.Up);
-						break;
-					}
+							brush.SelectOption(menu, Menu<TReturnType>.OptionChangeDirection.Up);
+							break;
+						}
 					case ConsoleKey.DownArrow:
-					{
-						if (menu.Options.ToList().IndexOf(menu.SelectedOption) == menu.Options.Count - 1)
-							continue;
+						{
+							if (menu.Options.ToList().IndexOf(menu.SelectedOption) == menu.Options.Count - 1)
+								continue;
 
 							brush.SelectOption(menu, Menu<TReturnType>.OptionChangeDirection.Down);
-						break;
-					}
+							break;
+						}
 				}
 			} while (key != ConsoleKey.Enter);
 
@@ -66,6 +75,8 @@ namespace DrunkenMonk.Providers
 		/// <param name="direction"></param>
 		public void SelectQuestion<T>(Menu<T> menu, Menu<T>.OptionChangeDirection direction)
 		{
+			logger.Trace($"{nameof(SelectQuestion)} method called");
+
 			int startY = (Console.WindowHeight - menu.Rows) / 2,
 				startX = (Console.WindowWidth - menu.MenuWidth) / 2;
 
@@ -89,7 +100,7 @@ namespace DrunkenMonk.Providers
 			#region Select O. in UI
 
 			int newIndex = menu.Options
-				               .ToList().IndexOf(lastSelectedQuestion) + (direction == Menu<T>.OptionChangeDirection.Down ? 1 : -1);
+											 .ToList().IndexOf(lastSelectedQuestion) + (direction == Menu<T>.OptionChangeDirection.Down ? 1 : -1);
 
 			if (newIndex < 0 || newIndex >= menu.Options.Count)
 				return;

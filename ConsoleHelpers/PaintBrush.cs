@@ -4,17 +4,27 @@ using System.Linq;
 using System.Reflection;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Constants;
+using NLog;
 
 namespace DrunkenMonk.ConsoleHelpers
 {
 	public class PaintBrush
 	{
+		private readonly Logger logger;
+
+		public PaintBrush()
+		{
+			logger = LogManager.GetCurrentClassLogger();
+		}
+
 		/// <summary>
 		/// Draws basic canvas surrounded by walls
 		/// Lets a space for socre board on right side of Console screen
 		/// </summary>
 		public void RenderCanvas(Canvas canvas)
 		{
+			logger.Trace($"Rendering canvas {canvas.Title}");
+
 			DrawRectangle(canvas.StartX, canvas.StartY, canvas.Width, canvas.Height);
 
 			canvas.SetCursorPosition(2, -1, false);
@@ -25,6 +35,8 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <param name="optionFormat">Format of question to be displayed</param>
 		public void RenderMenu<T>(Menu<T> menu, string optionFormat = "{0}")
 		{
+			logger.Trace("Method for rendering Menu called");
+
 			int startY = (Console.WindowHeight - menu.Rows + 1) / 2,
 				startX = (Console.WindowWidth - menu.MenuWidth) / 2;
 
@@ -63,7 +75,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 		public void SelectOption<T>(Menu<T> menu, Menu<T>.OptionChangeDirection newDirection)
 		{
-			// TODO: Finish
+			logger.Trace("Method for selecting another option of Menu called");
 
 			int startX = (Console.WindowWidth - menu.Options.ToList().Max(x => x.Value.Length)) / 2,
 				startY = (Console.WindowHeight - menu.Options.Count) / 2;
@@ -131,13 +143,23 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <param name="position"></param>
 		public void Derender(Canvas canvas, Position position)
 		{
+			logger.Trace("Derendering position");
+
+			logger.Debug($"Derendering position {{{position.X}, {position.Y}}} in canvas {canvas.Title}");
+
 			canvas.SetCursorPosition(position.X, position.Y);
 
 			Console.Write(' ');
 		}
 
-		public void Derender(Canvas canvas, IEnumerable<Position> positions)
+		public void Derender(Canvas canvas, IEnumerable<Position> obstacles)
 		{
+			logger.Trace("Derendering positions");
+
+			Position[] positions = obstacles as Position[] ?? obstacles.ToArray();
+
+			logger.Debug($"Derendering {positions.Length} positions in canvas {canvas.Title}");
+
 			foreach (Position position in positions)
 			{
 				canvas.SetCursorPosition(position.X, position.Y);
@@ -147,6 +169,10 @@ namespace DrunkenMonk.ConsoleHelpers
 
 		public void Render(Canvas canvas, Position position, char character)
 		{
+			logger.Trace("Rendering position");
+
+			logger.Debug($"Rendering character at {{{position.X}, {position.Y}}} in canvas: {canvas.Title}");
+
 			canvas.SetCursorPosition(position.X, position.Y);
 
 			Console.Write(character);
@@ -154,7 +180,13 @@ namespace DrunkenMonk.ConsoleHelpers
 
 		public void Render(Canvas canvas, IEnumerable<Position> obstacles, char character)
 		{
-			foreach (Position position in obstacles)
+			logger.Trace("Rendering popsitions");
+
+			Position[] positions = obstacles as Position[] ?? obstacles.ToArray();
+
+			logger.Debug($"Rendering {positions.Length} characters in canvas {canvas.Title}");
+
+			foreach (Position position in positions)
 			{
 				canvas.SetCursorPosition(position.X, position.Y);
 
@@ -164,6 +196,10 @@ namespace DrunkenMonk.ConsoleHelpers
 
 		public void DrawRectangle(int startX, int startY, int width, int height)
 		{
+			logger.Trace("Drawing rectangle");
+
+			logger.Debug($"Drawing rectagle of {width} width and {height} height at {{{startX},{startY}}}");
+
 			// substract walls (2)
 			// LE becouse width & height contains start...
 			for (int y = startY; y < startY + height; y++)

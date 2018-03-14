@@ -1,13 +1,18 @@
 ﻿using System;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Enums;
+using NLog;
 
 namespace DrunkenMonk.ConsoleHelpers
 {
 	public static class SimulationExtension
 	{
+		private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
 		public static Position GetFinalPosition(this Simulation simulation)
 		{
+			logger.Trace($"{nameof(GetFinalPosition)} method called");
+
 			switch (simulation.Direction)
 			{
 				case Direction.Down:
