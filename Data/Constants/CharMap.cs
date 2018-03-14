@@ -16,8 +16,12 @@
 
 		public const char DownRightCornerWall = '\u255D';
 
+		public const char Space = ' ';
+
 		public const char Player = '\u263A';
 
-		public const char Enemy = '\u263B';
+		public const char Enemy = '\u263B'; 
+
+		public const char Trail = '\u2591';
 	}
 }

@@ -61,6 +61,7 @@ namespace DrunkenMonk.ConsoleHelpers
 				Difference = punchChance == 1
 					? random.Next(3, 5)	// Punch
 					: 1,								// No punch
+				LastSafePosition = oldPosition,
 				RenderCharacter = Player.BodyCharacter
 			};
 		}

@@ -142,25 +142,27 @@ namespace DrunkenMonk
 			PaintBrush brush,
 			int index = 0)
 		{
-			if (index > 5) return;
+			if (index > 3) return;
 
 			if (newPlayerPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position)))
 			{
-				Simulation simulation = newPlayerPosition.SimulateCollision(context.Player.Position, newPlayerDirection);
+				SimulationResult simulationResult;
 
-				context.Square.ExecuteSimulation(simulation, newPosition =>
+				do
 				{
-					if (!newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position)))
-						return true;
+					Simulation simulation = newPlayerPosition.SimulateCollision(context.Player.Position, newPlayerDirection);
 
-					CollisionLogic(context, newPosition, newPlayerDirection.Reverse(), brush, index + 1);
+					simulationResult = context.Square.ExecuteSimulation(simulation, (newPosition, safePosition, newDirection) =>
+					{
+						return !newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position));
+					});
+				} while (!simulationResult.HasSuccessfulyFinished);
 
-					return false;
-				});
+				context.Player.Position = simulationResult.LastSafePosition;
 
 				// Update position and direction
-				context.Player.Direction = newPlayerDirection;
-				context.Player.Position = simulation.LastSuccessfulPosition ?? simulation.GetFinalPosition();
+				//context.Player.Direction = newPlayerDirection;
+				//context.Player.Position = simulation.LastSafePosition;
 			}
 			else
 			{

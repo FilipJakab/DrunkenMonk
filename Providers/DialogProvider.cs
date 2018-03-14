@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DrunkenMonk.Data;
 using DrunkenMonk.ConsoleHelpers;
+using DrunkenMonk.Data.Constants;
 using NLog;
 
 namespace DrunkenMonk.Providers
@@ -89,11 +90,11 @@ namespace DrunkenMonk.Providers
 
 			// Trim prefix-bracket
 			Console.SetCursorPosition(startX - 2, startY + lastIndex);
-			Console.Write(' ');
+			Console.Write(CharMap.Space);
 
 			// Trim postfix-bracket
 			Console.SetCursorPosition(startX + menu.SelectedOption.Value.Length - 1 + 2, startY + lastIndex);
-			Console.Write(' ');
+			Console.Write(CharMap.Space);
 
 			#endregion
 

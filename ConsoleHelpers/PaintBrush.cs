@@ -28,7 +28,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			DrawRectangle(canvas.StartX, canvas.StartY, canvas.Width, canvas.Height);
 
 			canvas.SetCursorPosition(2, -1, false);
-			Console.Write(' ' + canvas.Title + ' ');
+			Console.Write(CharMap.Space + canvas.Title + CharMap.Space);
 		}
 
 		/// <param name="menu"></param>
@@ -90,12 +90,12 @@ namespace DrunkenMonk.ConsoleHelpers
 				return;
 
 			Console.SetCursorPosition(startX - 2, startY + lastIndex);
-			Console.Write(' ');
+			Console.Write(CharMap.Space);
 
 			Console.SetCursorPosition(
 				startX + menu.Options.ToArray()[lastIndex].Value.Length + 1,
 				startY + lastIndex);
-			Console.Write(' ');
+			Console.Write(CharMap.Space);
 
 			#endregion
 
@@ -141,7 +141,8 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// </summary>
 		/// <param name="canvas"></param>
 		/// <param name="position"></param>
-		public void Derender(Canvas canvas, Position position)
+		/// <param name="leaveTrail"></param>
+		public void Derender(Canvas canvas, Position position, bool leaveTrail = true)
 		{
 			logger.Trace("Derendering position");
 
@@ -149,7 +150,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(position.X, position.Y);
 
-			Console.Write(' ');
+			Console.Write(leaveTrail ? CharMap.Trail : CharMap.Space);
 		}
 
 		public void Derender(Canvas canvas, IEnumerable<Position> obstacles)
@@ -163,7 +164,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			foreach (Position position in positions)
 			{
 				canvas.SetCursorPosition(position.X, position.Y);
-				Console.Write(' ');
+				Console.Write(CharMap.Space);
 			}
 		}
 

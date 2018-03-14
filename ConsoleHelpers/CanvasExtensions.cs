@@ -33,32 +33,45 @@ namespace DrunkenMonk.ConsoleHelpers
 				top + canvas.StartY + 1);
 		}
 
-		public static void /*IEnumerable<Position>*/ ExecuteSimulation(
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="canvas"></param>
+		/// <param name="simulation"></param>
+		/// <param name="validate">Return true if position is valid</param>
+		/// <returns>Last safe position</returns>
+		public static SimulationResult ExecuteSimulation(
 			this Canvas canvas,
 			Simulation simulation,
-			Func<Position, bool> validate)
+			Func<Position, Position, Direction, bool> validate)
 		{
 			PaintBrush brush = new PaintBrush();
 
-			brush.Derender(canvas, simulation.BasePosition);
-
+			// BassePosition is obstacle
+			//brush.Derender(canvas, simulation.BasePosition);
 			Position tmpPosition = new Position(simulation.BasePosition.X, simulation.BasePosition.Y);
+
+			SimulationResult result = new SimulationResult();
 
 			void SimulationIteration(Action<Position> modification)
 			{
-				simulation.LastSuccessfulPosition = tmpPosition;
-
-				brush.Derender(canvas, tmpPosition);
-
 				modification(tmpPosition);
 
-				if (!validate(tmpPosition))
+				if (!validate(tmpPosition, simulation.LastSafePosition, simulation.Direction))
+				{
+					result.HasSuccessfulyFinished = false;
+					
 					return;
+				}
 
 				brush.Render(canvas, tmpPosition, simulation.RenderCharacter);
 
-				// TODO: Move delayTime to constants / Appconfig
+#warning Move delayTime to constants / Appconfig
 				Thread.Sleep(350);
+
+				brush.Derender(canvas, tmpPosition);
+
+				result.LastSafePosition = Position.Copy(tmpPosition);
 			}
 
 			switch (simulation.Direction)
@@ -68,6 +81,9 @@ namespace DrunkenMonk.ConsoleHelpers
 						for (int i = 0; i < simulation.Difference; i++)
 						{
 							SimulationIteration(position => position.Y++);
+
+							if (!result.HasSuccessfulyFinished)
+								return result;
 						}
 						break;
 					}
@@ -76,6 +92,11 @@ namespace DrunkenMonk.ConsoleHelpers
 						for (int i = 0; i < simulation.Difference; i++)
 						{
 							SimulationIteration(position => position.Y--);
+
+							if (!result.HasSuccessfulyFinished)
+							{
+								return result;
+							}
 						}
 						break;
 					}
@@ -84,6 +105,9 @@ namespace DrunkenMonk.ConsoleHelpers
 						for (int i = 0; i < simulation.Difference; i++)
 						{
 							SimulationIteration(position => position.X--);
+
+							if (!result.HasSuccessfulyFinished)
+								return result;
 						}
 						break;
 					}
@@ -92,12 +116,17 @@ namespace DrunkenMonk.ConsoleHelpers
 						for (int i = 0; i < simulation.Difference; i++)
 						{
 							SimulationIteration(position => position.X++);
+
+							if (!result.HasSuccessfulyFinished)
+								return result;
 						}
 						break;
 					}
 			}
 
 			brush.Render(canvas, tmpPosition, simulation.RenderCharacter);
+
+			return result;
 		}
 
 		/// <summary>

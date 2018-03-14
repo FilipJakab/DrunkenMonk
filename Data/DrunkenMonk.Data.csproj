@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\Entity.cs" />
+    <Compile Include="Enums\SimulationResult.cs" />
     <Compile Include="Simulation.cs" />
     <Compile Include="Constants\CharMap.cs" />
     <Compile Include="Enums\Direction.cs" />

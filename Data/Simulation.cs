@@ -7,7 +7,7 @@ namespace DrunkenMonk.Data
 	{
 		public Position BasePosition { get; set; }
 
-		public Position LastSuccessfulPosition { get; set; }
+		public Position LastSafePosition { get; set; }
 
 		public Direction Direction { get; set; }
 
