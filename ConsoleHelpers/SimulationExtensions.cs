@@ -5,10 +5,15 @@ using NLog;
 
 namespace DrunkenMonk.ConsoleHelpers
 {
-	public static class SimulationExtension
+	public static class SimulationExtensions
 	{
 		private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
+		/// <summary>
+		/// Gets final position no matter if its safe or not
+		/// </summary>
+		/// <param name="simulation"></param>
+		/// <returns></returns>
 		public static Position GetFinalPosition(this Simulation simulation)
 		{
 			logger.Trace($"{nameof(GetFinalPosition)} method called");

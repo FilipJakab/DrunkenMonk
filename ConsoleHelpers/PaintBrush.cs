@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using DrunkenMonk.Data;
+using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Constants;
 using NLog;
 
@@ -12,9 +13,13 @@ namespace DrunkenMonk.ConsoleHelpers
 	{
 		private readonly Logger logger;
 
-		public PaintBrush()
+		private readonly bool leaveTrail;
+
+		public PaintBrush(bool leaveTrail = true)
 		{
 			logger = LogManager.GetCurrentClassLogger();
+
+			this.leaveTrail = leaveTrail;
 		}
 
 		/// <summary>
@@ -141,8 +146,8 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// </summary>
 		/// <param name="canvas"></param>
 		/// <param name="position"></param>
-		/// <param name="leaveTrail"></param>
-		public void Derender(Canvas canvas, Position position, bool leaveTrail = true)
+		/// <param name="trailChar"></param>
+		public void Derender(Canvas canvas, Position position, char? trailChar = null)
 		{
 			logger.Trace("Derendering position");
 
@@ -150,7 +155,9 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(position.X, position.Y);
 
-			Console.Write(leaveTrail ? CharMap.Trail : CharMap.Space);
+			char renderChar = leaveTrail ? trailChar ?? CharMap.LightTrail : CharMap.Space;
+
+			Console.Write(renderChar);
 		}
 
 		public void Derender(Canvas canvas, IEnumerable<Position> obstacles)

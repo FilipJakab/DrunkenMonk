@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DrunkenMonk.Data
+namespace DrunkenMonk.Data.Base
 {
 	public class Canvas
 	{

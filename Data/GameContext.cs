@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using DrunkenMonk.Data.Base;
 
 namespace DrunkenMonk.Data
 {
@@ -10,6 +11,8 @@ namespace DrunkenMonk.Data
 
 		public Canvas Square { get; set; }
 
-		public Canvas ScoreBoard { get; set; }
+		public TextCanvas ScoreBoard { get; set; }
+
+		public TextCanvas MovementLog { get; set; }
 	}
 }

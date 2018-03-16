@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DrunkenMonk.ConsoleHelpers;
 using DrunkenMonk.Data;
+using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Enums;
 using DrunkenMonk.Providers;
 using NLog;
@@ -24,8 +25,9 @@ namespace DrunkenMonk
 			GameContext context = new GameContext
 			{
 				Player = new Player(),
-				ScoreBoard = new Canvas(),
-				Square = new Canvas()
+				ScoreBoard = new TextCanvas(),
+				Square = new Canvas(),
+				MovementLog = new TextCanvas()
 			};
 
 			PaintBrush brush = new PaintBrush();
@@ -34,12 +36,20 @@ namespace DrunkenMonk
 
 			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(context.Square, context.Player.DifficultyLevel, logger);
 
-			context.Enemies = npcProvider.GenerateEnemies(
-				context.Square,
-				context.Player,
-				amountOfPeopleOnSquare);
+			context.Enemies = new List<Enemy>();
+			//context.Enemies = npcProvider.GenerateEnemies(
+			//	context.Square,
+			//	context.Player,
+			//	amountOfPeopleOnSquare);
 
 			brush.Render(context.Square, context.Enemies.Select(x => x.Position), Enemy.BodyCharacter);
+
+			Timer timer = new Timer(state =>
+			{
+				context.ScoreBoard.Clear();
+				context.ScoreBoard.WriteLine($"Current Time: {DateTime.Now: hh:mm:ss}");
+				context.ScoreBoard.WriteLine($"Position: [{context.Player.Position.X},{context.Player.Position.Y}]");
+			}, null, 0, 1000);
 
 			Task task = null;
 			CancellationTokenSource cts = null;
@@ -120,7 +130,7 @@ namespace DrunkenMonk
 
 					// TODO: Handle player's tripping
 
-					CollisionLogic(context, newPlayerPosition, newPlayerDirection, brush);
+					TripAndCollisionLogic(context, newPlayerPosition, newPlayerDirection, brush);
 
 					Thread.Sleep(configurations.GetMainDelay);
 				}, cts.Token);
@@ -134,35 +144,86 @@ namespace DrunkenMonk
 		/// <param name="newPlayerPosition"></param>
 		/// <param name="newPlayerDirection"></param>
 		/// <param name="brush"></param>
-		/// <param name="index">Index of Collision -> to prevent infinite collision loop</param>
-		private static void CollisionLogic(
+		private static void TripAndCollisionLogic(
 			GameContext context,
 			Position newPlayerPosition,
 			Direction newPlayerDirection,
-			PaintBrush brush,
-			int index = 0)
+			PaintBrush brush)
 		{
-			if (index > 3) return;
+			Random random = new Random(DateTime.Now.Millisecond);
 
-			if (newPlayerPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position)))
+			bool collided = newPlayerPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position));
+
+			bool tripped = false;
+
+			if (!collided)
 			{
-				SimulationResult simulationResult;
+				tripped = random.Next(1, 5) == 1; // 25% chance
+			}
+
+			if (collided)
+			{
+				SimulationResult simulationResult = null;
 
 				do
 				{
-					Simulation simulation = newPlayerPosition.SimulateCollision(context.Player.Position, newPlayerDirection);
+					// TODO: Move constnat numbres to App.config
+					Simulation simulation = newPlayerPosition
+						.SimulateCollision(
+							simulationResult?.LastSafePosition ?? context.Player.Position,
+							newPlayerDirection,
+							3, 4);
 
-					simulationResult = context.Square.ExecuteSimulation(simulation, (newPosition, safePosition, newDirection) =>
+					newPlayerDirection = newPlayerDirection.Reverse();
+
+					simulationResult = context.Square.ExecuteSimulation(simulation, newPosition =>
 					{
 						return !newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position));
 					});
+
+					newPlayerPosition = simulationResult.Obstacle;
 				} while (!simulationResult.HasSuccessfulyFinished);
 
 				context.Player.Position = simulationResult.LastSafePosition;
+			}
+			else if (tripped)
+			{
+				SimulationResult simulationResult = null;
 
-				// Update position and direction
-				//context.Player.Direction = newPlayerDirection;
-				//context.Player.Position = simulation.LastSafePosition;
+				do
+				{
+					Simulation simulation;
+
+					// TODO: Move constnat numbres to App.config
+					if (!simulationResult?.HasSuccessfulyFinished ?? false)
+					{
+						simulation = newPlayerPosition
+							.SimulateCollision(
+								simulationResult.LastSafePosition,
+								newPlayerDirection,
+								3, 4);
+
+						newPlayerDirection = newPlayerDirection.Reverse();
+					}
+					else
+					{
+						simulation = newPlayerPosition
+							.SimulateTrip(
+								simulationResult?.LastSafePosition ?? context.Player.Position,
+								newPlayerDirection,
+								2, 4);
+					}
+
+					simulationResult = context.Square.ExecuteSimulation(simulation, (newPosition) =>
+					{
+						return !newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position))
+							|| newPosition.Y < 0 || newPosition.X < 0; // TODO: Finish validation
+					}, true);
+
+					newPlayerPosition = simulationResult.Obstacle;
+				} while (!simulationResult.HasSuccessfulyFinished);
+
+				context.Player.Position = simulationResult.LastSafePosition;
 			}
 			else
 			{
@@ -207,6 +268,8 @@ namespace DrunkenMonk
 			logger.Trace($"{nameof(GetUserAction)} method called");
 
 			logger.Debug($"Users key was {key}");
+
+			// TODO: Use context.MovementLog to show on console what was pressed by user
 
 			switch (key)
 			{
@@ -323,8 +386,14 @@ namespace DrunkenMonk
 				ctx.ScoreBoard.StartX = (config.GetComponentMargin * 3) + ctx.Square.Width + 1;
 				ctx.ScoreBoard.StartY = ctx.Square.StartY;
 				ctx.ScoreBoard.Width = config.GetScoreBoardWidth;
-				ctx.ScoreBoard.Height = config.GetScoreBoardHeight;
+				ctx.ScoreBoard.Height = config.GetScoreBoardHeight / 2;
 				ctx.ScoreBoard.Title = "Info board";
+
+				ctx.MovementLog.StartX = ctx.ScoreBoard.StartX;
+				ctx.MovementLog.StartY = ctx.ScoreBoard.Height + (config.GetComponentMargin * 2) + 1;
+				ctx.MovementLog.Width = ctx.ScoreBoard.Width;
+				ctx.MovementLog.Height = ctx.ScoreBoard.Height;
+				ctx.MovementLog.Title = "Movement History";
 			}
 			catch (FormatException ex)
 			{
@@ -379,6 +448,8 @@ namespace DrunkenMonk
 			// Draws Walls for score board
 			brush.RenderCanvas(ctx.ScoreBoard);
 			logger.Info($"canvas {ctx.ScoreBoard.Title} rendered");
+
+			brush.RenderCanvas(ctx.MovementLog);
 
 			// Draws player
 			brush.Render(ctx.Square, ctx.Player.Position, Player.BodyCharacter);

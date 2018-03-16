@@ -22,6 +22,10 @@
 
 		public const char Enemy = '\u263B'; 
 
-		public const char Trail = '\u2591';
+		public const char LightTrail = '\u2591';
+
+		public const char MediumTrail = '\u2592';
+
+		public const char DarkTrail = '\u2593';
 	}
 }

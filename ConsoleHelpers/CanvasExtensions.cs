@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using DrunkenMonk.Data;
+using DrunkenMonk.Data.Base;
+using DrunkenMonk.Data.Constants;
 using DrunkenMonk.Data.Enums;
 
 namespace DrunkenMonk.ConsoleHelpers
@@ -39,32 +41,42 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <param name="canvas"></param>
 		/// <param name="simulation"></param>
 		/// <param name="validate">Return true if position is valid</param>
+		/// <param name="isTrip"></param>
 		/// <returns>Last safe position</returns>
 		public static SimulationResult ExecuteSimulation(
 			this Canvas canvas,
 			Simulation simulation,
-			Func<Position, Position, Direction, bool> validate)
+			Func<Position, bool> validate,
+			bool isTrip = false)
 		{
 			PaintBrush brush = new PaintBrush();
 
 			// BassePosition is obstacle
 			//brush.Derender(canvas, simulation.BasePosition);
-			Position tmpPosition = new Position(simulation.BasePosition.X, simulation.BasePosition.Y);
+			Position tmpPosition = Position.Copy(simulation.BasePosition);
 
 			SimulationResult result = new SimulationResult();
 
 			void SimulationIteration(Action<Position> modification)
 			{
+				if (isTrip && tmpPosition.Compare(simulation.BasePosition))
+					brush.Derender(canvas, tmpPosition, CharMap.MediumTrail);
+
 				modification(tmpPosition);
 
-				if (!validate(tmpPosition, simulation.LastSafePosition, simulation.Direction))
+				if (!validate(tmpPosition))
 				{
 					result.HasSuccessfulyFinished = false;
-					
+					result.Obstacle = Position.Copy(tmpPosition);
+
 					return;
 				}
 
+				Console.ForegroundColor = ConsoleColor.Cyan;
+
 				brush.Render(canvas, tmpPosition, simulation.RenderCharacter);
+
+				Console.ResetColor();
 
 #warning Move delayTime to constants / Appconfig
 				Thread.Sleep(350);
@@ -72,6 +84,8 @@ namespace DrunkenMonk.ConsoleHelpers
 				brush.Derender(canvas, tmpPosition);
 
 				result.LastSafePosition = Position.Copy(tmpPosition);
+				result.Obstacle = null;
+				result.HasSuccessfulyFinished = true;
 			}
 
 			switch (simulation.Direction)
@@ -125,6 +139,8 @@ namespace DrunkenMonk.ConsoleHelpers
 			}
 
 			brush.Render(canvas, tmpPosition, simulation.RenderCharacter);
+
+			result.HasSuccessfulyFinished = true;
 
 			return result;
 		}

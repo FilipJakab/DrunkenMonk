@@ -1,4 +1,5 @@
-﻿using DrunkenMonk.Data.Base;
+﻿using System;
+using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Enums;
 
 namespace DrunkenMonk.Data

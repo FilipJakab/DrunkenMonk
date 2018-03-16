@@ -45,7 +45,7 @@
     <Compile Include="Simulation.cs" />
     <Compile Include="Constants\CharMap.cs" />
     <Compile Include="Enums\Direction.cs" />
-    <Compile Include="Canvas.cs" />
+    <Compile Include="Base\Canvas.cs" />
     <Compile Include="Enums\UserAction.cs" />
     <Compile Include="GameContext.cs" />
     <Compile Include="Position.cs" />
@@ -54,6 +54,7 @@
     <Compile Include="Menu.cs" />
     <Compile Include="Player.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TextCanvas.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

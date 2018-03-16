@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using DrunkenMonk.Data;
+using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Enums;
 using NLog;
 
@@ -24,7 +25,7 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// </summary>
 		/// <param name="position"></param>
 		/// <param name="obstacles"></param>
-		/// <returns>True if position is equal to atleast one obstacle in obstacles</returns>
+		/// <returns>True if obstaclePosition is equal to atleast one obstacle in obstacles</returns>
 		public static bool PredictCollision(this Position position, IEnumerable<Position> obstacles)
 		{
 			logger.Trace($"{nameof(PredictCollision)} method called");
@@ -33,25 +34,26 @@ namespace DrunkenMonk.ConsoleHelpers
 		}
 
 		/// <summary>
-		/// Simulates Collision of players Position which is currently on any obstacle (position is already predicted)
+		/// Simulates Collision of players Position which is currently on any obstacle (obstaclePosition is already predicted)
 		/// </summary>
-		/// <param name="position">new position (obstacle if collision is unavoidable)</param>
+		/// <param name="position">new obstaclePosition (obstacle if collision is unavoidable)</param>
 		/// <param name="oldPosition">Position of player</param>
 		/// <param name="oldDirection"></param>
+		/// <param name="minSteps"></param>
+		/// <param name="maxSteps"></param>
 		/// <returns></returns>
-		public static Simulation SimulateCollision(this Position position, Position oldPosition, Direction oldDirection)
+		public static Simulation SimulateCollision(
+			this Position position,
+			Position oldPosition,
+			Direction oldDirection,
+			int minSteps, int maxSteps)
 		{
 			logger.Trace($"{nameof(SimulateCollision)} method called");
 
-			/**
-			 * TODO: Refactor this method
-			 * Make BasePosition pointing to obstacle, not player
-			 */
-
 			Random random = new Random(DateTime.Now.Millisecond);
 
-			// Generates 20% chance int 1-5
-			int punchChance = random.Next(1, 6);
+			// Generates 20%
+			int punchChance = random.Next(1, 5);
 			logger.Debug($"Chance of punch is {1/5f} punched ? {(punchChance == 1 ? "Yes" : "No")}");
 
 			return new Simulation
@@ -59,11 +61,33 @@ namespace DrunkenMonk.ConsoleHelpers
 				BasePosition = position,
 				Direction = oldDirection.Reverse(),
 				Difference = punchChance == 1
-					? random.Next(3, 5)	// Punch
-					: 1,								// No punch
+					? random.Next(minSteps, maxSteps + 1)	// Punch
+					: 1,																	// No punch
 				LastSafePosition = oldPosition,
 				RenderCharacter = Player.BodyCharacter
 			};
 		}
+
+		public static Simulation SimulateTrip(
+			this Position obstaclePosition,
+			Position playerPosition,
+			Direction playerDirection,
+			int minSteps, int maxSteps)
+		{
+			logger.Trace($"{nameof(SimulateTrip)} method called");
+
+			Random random = new Random(DateTime.Now.Millisecond);
+
+			return new Simulation
+			{
+				BasePosition = playerPosition,
+				Direction = playerDirection,
+				Difference = random.Next(minSteps, maxSteps + 1),
+				LastSafePosition = obstaclePosition, // collision was already checked
+				RenderCharacter = Player.BodyCharacter
+			};
+		}
+
+		public static bool Compare(this Position pos1, Position pos2) => pos1.X == pos2.X && pos1.Y == pos2.Y;
 	}
 }
