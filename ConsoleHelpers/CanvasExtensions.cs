@@ -20,10 +20,10 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public static void SetCursorPosition(this Canvas canvas, int left, int top, bool validateInput = true)
 		{
-			// Substract walls
 			if (validateInput)
 			{
-				if (left >= canvas.Width - 2 || left < 0)
+				// Substract walls
+				if (left >= canvas.ContentWidth || left < 0)
 					throw new ArgumentOutOfRangeException(nameof(left), $"Parameter is out of Map; width: {canvas.Width}, left: {left}");
 				if (top >= canvas.Height - 2 || top < 0)
 					throw new ArgumentOutOfRangeException(nameof(top), $"Parameter is out of Map; height: {canvas.Height}, top: {top}");
@@ -53,37 +53,37 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			// BassePosition is obstacle
 			//brush.Derender(canvas, simulation.BasePosition);
-			Position tmpPosition = Position.Copy(simulation.BasePosition);
+			Position currentPosition = Position.Copy(simulation.BasePosition);
 
 			SimulationResult result = new SimulationResult();
 
 			void SimulationIteration(Action<Position> modification)
 			{
-				if (isTrip && tmpPosition.Compare(simulation.BasePosition))
-					brush.Derender(canvas, tmpPosition, CharMap.MediumTrail);
+				if (isTrip && currentPosition.Compare(simulation.BasePosition))
+					brush.Derender(canvas, currentPosition, CharMap.MediumTrail);
 
-				modification(tmpPosition);
+				modification(currentPosition);
 
-				if (!validate(tmpPosition))
+				if (!validate(currentPosition))
 				{
 					result.HasSuccessfulyFinished = false;
-					result.Obstacle = Position.Copy(tmpPosition);
+					result.Obstacle = Position.Copy(currentPosition);
 
 					return;
 				}
 
 				Console.ForegroundColor = ConsoleColor.Cyan;
 
-				brush.Render(canvas, tmpPosition, simulation.RenderCharacter);
+				brush.Render(canvas, currentPosition, simulation.RenderCharacter);
 
 				Console.ResetColor();
 
 #warning Move delayTime to constants / Appconfig
 				Thread.Sleep(350);
 
-				brush.Derender(canvas, tmpPosition);
+				brush.Derender(canvas, currentPosition);
 
-				result.LastSafePosition = Position.Copy(tmpPosition);
+				result.LastSafePosition = Position.Copy(currentPosition);
 				result.Obstacle = null;
 				result.HasSuccessfulyFinished = true;
 			}
@@ -138,7 +138,7 @@ namespace DrunkenMonk.ConsoleHelpers
 					}
 			}
 
-			brush.Render(canvas, tmpPosition, simulation.RenderCharacter);
+			brush.Render(canvas, currentPosition, simulation.RenderCharacter);
 
 			result.HasSuccessfulyFinished = true;
 
@@ -158,7 +158,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			 * Trim 2 becouse of Width and Height contains walls as well
 			 * Implicit value for bool is False -> No need to set it manually
 			 */
-			bool[,] array = new bool[canvas.Height - 2, canvas.Width - 2];
+			bool[,] array = new bool[canvas.Height - 2, canvas.ContentWidth];
 
 			foreach (Position obstacle in obstacles)
 			{

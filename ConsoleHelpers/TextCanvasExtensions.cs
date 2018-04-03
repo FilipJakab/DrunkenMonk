@@ -1,21 +1,86 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Constants;
+using DrunkenMonk.Data.Enums;
 
 namespace DrunkenMonk.ConsoleHelpers
 {
 	public static class TextCanvasExtensions
 	{
-		public static void Focus(this TextCanvas canvas)
+		public static void Focus(
+			this TextCanvas canvas,
+			ConsoleKeyInfo exitKey,
+			Dictionary<ConsoleKeyInfo, Action> keyHandlers)
 		{
+			/**
+			 * TODO: Show Cursor
+			 * TODO: Save Input to Buffer
+			 * ...
+			 */
+
 			throw new NotImplementedException();
 		}
 
-		public static void WriteLine(this TextCanvas canvas, string text, int? row = null)
+		/// <summary>
+		/// Overwrites whole line at index of row
+		/// </summary>
+		/// <param name="canvas"></param>
+		/// <param name="text"></param>
+		/// <param name="row"></param>
+		/// <param name="rightAligned"></param>
+		public static void WriteLine(this TextCanvas canvas, string text, int? row = null, bool rightAligned = false)
 		{
-			if (row == null)
-				row = canvas.CurrentRow;
+			row = row ?? canvas.CurrentRow;
+
+			if (row.Value < 0 || row.Value > canvas.ContentHeight)
+				throw new ArgumentOutOfRangeException(nameof(row), row.Value, "Given row is out of range");
+
+			#region Line-wrapping Logic
+
+			if (text.Length > canvas.ContentWidth)
+			{
+				List<string> rows = FoldText(text, canvas.ContentWidth);
+
+				rows.Last().Fill(canvas.ContentWidth, FillOptions.Default | FillOptions.OverwriteBaseString);
+
+				if (rightAligned)
+				{
+					foreach (var rowString in rows)
+					{
+						for (int i = rowString.Length - 1, j = 0; i >= 0; i--, j++)
+						{
+							canvas.SetCursorPosition(canvas.ContentWidth - j, row.Value + rows.IndexOf(rowString));
+
+							Console.Write(rowString[i]);
+						}
+					}
+					return;
+				}
+
+				foreach (var rowString in rows)
+				{
+					canvas.SetCursorPosition(0, row.Value + rows.IndexOf(rowString));
+
+					Console.Write(rowString);
+				}
+				return;
+			}
+
+			#endregion
+
+			if (rightAligned)
+			{
+				for (int i = text.Length - 1, j = 0; i >= 0 && j < canvas.ContentWidth; i--, j++)
+				{
+					canvas.SetCursorPosition(canvas.ContentWidth - j, row.Value);
+
+					Console.Write(text[i]);
+				}
+
+				return;
+			}
 
 			canvas.SetCursorPosition(0, row.Value);
 
@@ -24,41 +89,33 @@ namespace DrunkenMonk.ConsoleHelpers
 			canvas.CurrentRow++;
 		}
 
+		private static List<string> FoldText(string text, int rowWidth)
+		{
+			List<string> tmp = new List<string>((int)Math.Ceiling(text.Length / (float)rowWidth));
+			for (int i = 0; i < Math.Ceiling(text.Length / (float)rowWidth); i++)
+			{
+				tmp.Add(text.Substring(i * rowWidth, rowWidth));
+			}
+
+			return tmp;
+		}
+
 		/// <summary>
-		/// 
+		/// Writes text on 1 line, does not handle Line-wrapping
 		/// </summary>
 		/// <exception cref="ArgumentOutOfRangeException">Is thrown if text would overflow from canvas</exception>
 		/// <param name="canvas"></param>
 		/// <param name="text"></param>
-		/// <param name="row"></param>
+		/// <param name="row">Row of "Visible Content"</param>
 		public static void Write(this TextCanvas canvas, string text, int? row = null)
 		{
-			if (row == null)
-				row = canvas.CurrentRow;
+			row = row ?? canvas.CurrentRow;
 
-			int widthIndex = canvas.ScreenBuffer.ToList()[row.Value].Length - 1;
+			int widthIndex = canvas.ScreenBuffer[row.Value].Length;
 
-			// Line-wrapping logic
-			if (widthIndex + text.Length > canvas.Width - 2)
-			{
-				for (int i = canvas.CurrentRow; i < (widthIndex + text.Length) / (canvas.Width - 2); i++)
-				{
-					int endIndexOfCurrentRow = (i + 1) * canvas.Width;
-
-					if (endIndexOfCurrentRow > text.Length)
-						endIndexOfCurrentRow = text.Length - 1;
-
-					string substring = text.Substring(i * (canvas.Width - 3), endIndexOfCurrentRow);
-
-					canvas.SetCursorPosition(widthIndex, canvas.CurrentRow);
-
-					Console.Write(substring);
-
-					canvas.CurrentRow++;
-				}
-
-				return;
-			}
+			// Line-wrapping
+			if (widthIndex + text.Length > canvas.ContentWidth)
+				throw new ArgumentOutOfRangeException(nameof(text), "Text Overflow");
 
 			canvas.SetCursorPosition(
 				widthIndex,
@@ -76,7 +133,7 @@ namespace DrunkenMonk.ConsoleHelpers
 				for (int y = 0; y < canvas.Height - 2; y++)
 				{
 					canvas.SetCursorPosition(0, y);
-					Console.Write(CharMap.Space.Repeat(canvas.Width - 2));
+					Console.Write(CharMap.Space.Repeat(canvas.ContentWidth));
 				}
 				return;
 			}
@@ -87,7 +144,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(0, rowIndex.Value);
 
-			Console.Write(CharMap.Space.Repeat(canvas.Width - 2));
+			Console.Write(CharMap.Space.Repeat(canvas.ContentWidth));
 		}
 	}
 }

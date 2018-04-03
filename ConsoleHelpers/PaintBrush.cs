@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Constants;
@@ -42,15 +41,15 @@ namespace DrunkenMonk.ConsoleHelpers
 		{
 			logger.Trace("Method for rendering Menu called");
 
-			int startY = (Console.WindowHeight - menu.Rows + 1) / 2,
-				startX = (Console.WindowWidth - menu.MenuWidth) / 2;
+			int startX = menu.StartX,
+				startY = menu.StartY;
 
-			// RenderMenu title
+			// Render title
 			if (!string.IsNullOrEmpty(menu.Question))
 			{
 				Console.SetCursorPosition(
-					(Console.WindowWidth - menu.Question.Length) / 2,
-					startY - 1
+					menu.CenterXPosition - (menu.Question.Length / 2),
+					startY++
 				);
 				Console.Write(menu.Question);
 			}
@@ -58,21 +57,20 @@ namespace DrunkenMonk.ConsoleHelpers
 			// RenderMenu Options
 			foreach (KeyValuePair<T, string> option in menu.Options)
 			{
-				bool isFirst = Equals(menu.Options.First(), option);
+				bool isSelected = Equals((menu.SelectedOption ?? menu.Options.First()), option);
 
-				if (isFirst)
+				if (isSelected)
 				{
-					Console.SetCursorPosition(startX - 2, startY);
+					Console.SetCursorPosition(menu.CenterXPosition - (option.Value.Length / 2) - 3, startY);
 					Console.Write('[');
 				}
 
-				Console.SetCursorPosition(startX, startY++);
+				Console.SetCursorPosition(menu.CenterXPosition - (option.Value.Length / 2), startY++);
 				Console.Write(optionFormat, option.Value);
 
-				if (isFirst)
-				{
-					Console.Write(" ]");
-				}
+				if (!isSelected) continue;
+
+				Console.Write("  ]");
 			}
 
 			menu.SelectedOption = menu.Options.First();
@@ -82,23 +80,24 @@ namespace DrunkenMonk.ConsoleHelpers
 		{
 			logger.Trace("Method for selecting another option of Menu called");
 
-			int startX = (Console.WindowWidth - menu.Options.ToList().Max(x => x.Value.Length)) / 2,
-				startY = (Console.WindowHeight - menu.Options.Count) / 2;
+			int startY = menu.StartY + 1;
 
 			#region Trim selected option
 
-			int lastIndex = menu.Options.ToList().IndexOf(menu.SelectedOption);
+			int lastIndex = menu.Options.ToList().IndexOf(menu.SelectedOption ?? menu.Options.ToList().First());
 
 			// Validation
 			if (lastIndex == 0 && newDirection == Menu<T>.OptionChangeDirection.Up
 					|| lastIndex == menu.Options.Count - 1 && newDirection == Menu<T>.OptionChangeDirection.Down)
 				return;
 
-			Console.SetCursorPosition(startX - 2, startY + lastIndex);
+			Console.SetCursorPosition(
+				menu.CenterXPosition - ((menu.SelectedOption?.Value.Length ?? menu.Options.First().Value.Length) / 2) - 3,
+				startY + lastIndex);
 			Console.Write(CharMap.Space);
 
 			Console.SetCursorPosition(
-				startX + menu.Options.ToArray()[lastIndex].Value.Length + 1,
+				menu.CenterXPosition + ((menu.SelectedOption?.Value.Length ?? menu.Options.First().Value.Length) / 2) + 3,
 				startY + lastIndex);
 			Console.Write(CharMap.Space);
 
@@ -131,11 +130,14 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			menu.SelectedOption = menu.Options.ToArray()[newIndex];
 
-			Console.SetCursorPosition(startX - 2, startY + newIndex);
+			Console.SetCursorPosition(
+				menu.CenterXPosition - (menu.SelectedOption.Value.Value.Length / 2) - 3,
+				startY + newIndex);
 			Console.Write('[');
 
 			Console.SetCursorPosition(
-				startX + menu.SelectedOption.Value.Length + 1, startY + newIndex);
+				menu.CenterXPosition + (menu.SelectedOption.Value.Value.Length / 2) + 3,
+				startY + newIndex);
 			Console.Write(']');
 
 			#endregion

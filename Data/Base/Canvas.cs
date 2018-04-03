@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 
 namespace DrunkenMonk.Data.Base
 {
@@ -12,7 +13,13 @@ namespace DrunkenMonk.Data.Base
 
 		public int Width { get; set; }
 
+		public int ContentWidth => Width - 2;
+
 		public int Height { get; set; }
+
+		public int ContentHeight => Height - 2;
+
+		public char BorderChar { get; set; }
 
 		public string Title
 		{

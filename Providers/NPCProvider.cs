@@ -35,7 +35,7 @@ namespace DrunkenMonk.Providers
 			for (int i = 0; i < amount; i++)
 			{
 				// Positions are relative
-				int x = random.Next(0, canvas.Width - 2);
+				int x = random.Next(0, canvas.ContentWidth);
 				int y = random.Next(0, canvas.Height - 2);
 
 				if (x == player.Position.X && y == player.Position.Y)

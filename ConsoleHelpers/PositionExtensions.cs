@@ -54,15 +54,15 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			// Generates 20%
 			int punchChance = random.Next(1, 5);
-			logger.Debug($"Chance of punch is {1/5f} punched ? {(punchChance == 1 ? "Yes" : "No")}");
+			logger.Debug($"Chance of punch is {1 / 5f} punched ? {(punchChance == 1 ? "Yes" : "No")}");
 
 			return new Simulation
 			{
 				BasePosition = position,
 				Direction = oldDirection.Reverse(),
 				Difference = punchChance == 1
-					? random.Next(minSteps, maxSteps + 1)	// Punch
-					: 1,																	// No punch
+					? random.Next(minSteps, maxSteps + 1) // Punch
+					: 1, // No punch
 				LastSafePosition = oldPosition,
 				RenderCharacter = Player.BodyCharacter
 			};

@@ -37,10 +37,10 @@ namespace DrunkenMonk
 			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(context.Square, context.Player.DifficultyLevel, logger);
 
 			context.Enemies = new List<Enemy>();
-			//context.Enemies = npcProvider.GenerateEnemies(
-			//	context.Square,
-			//	context.Player,
-			//	amountOfPeopleOnSquare);
+			context.Enemies = npcProvider.GenerateEnemies(
+				context.Square,
+				context.Player,
+				amountOfPeopleOnSquare);
 
 			brush.Render(context.Square, context.Enemies.Select(x => x.Position), Enemy.BodyCharacter);
 
@@ -75,7 +75,9 @@ namespace DrunkenMonk
 					UserAction action = GetUserAction(key, logger);
 
 					// Copy Players Position and Direction
-					Position newPlayerPosition = new Position(context.Player.Position.X, context.Player.Position.Y);
+					Position newPlayerPosition = Position.Copy(context.Player.Position);
+					Position oldPosition = Position.Copy(context.Player.Position);
+
 					Direction newPlayerDirection = context.Player.Direction;
 
 					#region Handle User Actions
@@ -108,7 +110,7 @@ namespace DrunkenMonk
 							}
 						case UserAction.Reload:
 							{
-								Reload(context, logger);
+								Reload(context, timer, logger);
 								return;
 							}
 						case UserAction.ShowPath:
@@ -130,7 +132,7 @@ namespace DrunkenMonk
 
 					// TODO: Handle player's tripping
 
-					TripAndCollisionLogic(context, newPlayerPosition, newPlayerDirection, brush);
+					TripAndCollisionLogic(context, oldPosition, newPlayerPosition, newPlayerDirection, brush);
 
 					Thread.Sleep(configurations.GetMainDelay);
 				}, cts.Token);
@@ -141,11 +143,13 @@ namespace DrunkenMonk
 		/// Checks if next position will be collision and handles it
 		/// </summary>
 		/// <param name="context"></param>
+		/// <param name="lastPosition"></param>
 		/// <param name="newPlayerPosition"></param>
 		/// <param name="newPlayerDirection"></param>
 		/// <param name="brush"></param>
 		private static void TripAndCollisionLogic(
 			GameContext context,
+			Position lastPosition,
 			Position newPlayerPosition,
 			Direction newPlayerDirection,
 			PaintBrush brush)
@@ -168,9 +172,9 @@ namespace DrunkenMonk
 				do
 				{
 					// TODO: Move constnat numbres to App.config
-					Simulation simulation = newPlayerPosition
+					Simulation simulation = (simulationResult?.Obstacle ?? newPlayerPosition)
 						.SimulateCollision(
-							simulationResult?.LastSafePosition ?? context.Player.Position,
+							newPlayerPosition,
 							newPlayerDirection,
 							3, 4);
 
@@ -181,7 +185,7 @@ namespace DrunkenMonk
 						return !newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position));
 					});
 
-					newPlayerPosition = simulationResult.Obstacle;
+					newPlayerPosition = simulationResult.LastSafePosition;
 				} while (!simulationResult.HasSuccessfulyFinished);
 
 				context.Player.Position = simulationResult.LastSafePosition;
@@ -214,7 +218,7 @@ namespace DrunkenMonk
 								2, 4);
 					}
 
-					simulationResult = context.Square.ExecuteSimulation(simulation, (newPosition) =>
+					simulationResult = context.Square.ExecuteSimulation(simulation, newPosition =>
 					{
 						return !newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position))
 							|| newPosition.Y < 0 || newPosition.X < 0; // TODO: Finish validation
@@ -237,8 +241,10 @@ namespace DrunkenMonk
 			}
 		}
 
-		private static void Reload(GameContext ctx, Logger logger)
+		private static void Reload(GameContext ctx, Timer timeTimer, Logger logger)
 		{
+			timeTimer.Change(UInt32.MaxValue, 0);
+
 			Init(ctx, logger).Wait();
 
 			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(ctx.Square, ctx.Player.DifficultyLevel, logger);
@@ -256,6 +262,8 @@ namespace DrunkenMonk
 
 			ctx.Player.Position.X = 0;
 			ctx.Player.Position.Y = 0;
+
+			timeTimer.Change(0, 1000);
 		}
 
 		/// <summary>
@@ -383,16 +391,16 @@ namespace DrunkenMonk
 				ctx.Square.Title = "Main field - Square";
 
 				logger.Info("Setting up ScoreBoard");
-				ctx.ScoreBoard.StartX = (config.GetComponentMargin * 3) + ctx.Square.Width + 1;
+				ctx.ScoreBoard.StartX = (config.GetComponentMargin * 3) + ctx.Square.Width;
 				ctx.ScoreBoard.StartY = ctx.Square.StartY;
 				ctx.ScoreBoard.Width = config.GetScoreBoardWidth;
-				ctx.ScoreBoard.Height = config.GetScoreBoardHeight / 2;
+				ctx.ScoreBoard.Height = (int)Math.Ceiling(config.GetScoreBoardHeight / 2.0) - config.GetComponentMargin;
 				ctx.ScoreBoard.Title = "Info board";
 
 				ctx.MovementLog.StartX = ctx.ScoreBoard.StartX;
-				ctx.MovementLog.StartY = ctx.ScoreBoard.Height + (config.GetComponentMargin * 2) + 1;
+				ctx.MovementLog.StartY = ctx.ScoreBoard.Height + (config.GetComponentMargin * 3);
 				ctx.MovementLog.Width = ctx.ScoreBoard.Width;
-				ctx.MovementLog.Height = ctx.ScoreBoard.Height;
+				ctx.MovementLog.Height = ctx.ScoreBoard.Height - 1;
 				ctx.MovementLog.Title = "Movement History";
 			}
 			catch (FormatException ex)
@@ -434,7 +442,9 @@ namespace DrunkenMonk
 						DifficultyLevel.Hard,
 						"I alcohol therefor I am"
 					}
-				}
+				},
+				Position = RenderMenuPosition.Center,
+				Margin = 1
 			});
 
 			logger.Debug($"User picked {ctx.Player.DifficultyLevel.ToString()}");

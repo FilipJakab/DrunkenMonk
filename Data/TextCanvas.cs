@@ -6,30 +6,48 @@ using DrunkenMonk.Data.Base;
 
 namespace DrunkenMonk.Data
 {
+	// TODO: Consider adding optional scroll bar
 	public class TextCanvas : Canvas
 	{
 		/// <summary>
-		/// Full buffer
+		/// Whole Content buffer
 		/// </summary>
-		private IEnumerable<string> buffer { get; set; }
+		private List<string> buffer { get; }
 
 		/// <summary>
-		/// Visible content
+		/// Visible content (currentRow - 3 up to (currentRow - 3) + ContentHeigth)
 		/// </summary>
-		public IEnumerable<string> ScreenBuffer { get; }
+		public List<string> ScreenBuffer {
+			get
+			{
+				int start;
+				if (_currentRow <= 3)
+					start = 0;
+				else
+					start = _currentRow - 3;
+
+				int end;
+				if (start + ContentHeight > buffer.Count - 1 - start)
+					end = buffer.Count - 1;
+				else
+					end = start + ContentHeight;
+
+				return buffer.GetRange(start, end);
+			}
+		}
 
 		private int _currentRow;
 
 		/// <summary>
-		/// Index of row currently selected to write on
+		/// Index of row currently selected row to write on
 		/// </summary>
 		public int CurrentRow
 		{
 			get => _currentRow;
 			set
 			{
-				if (value > Height)
-					throw new ArgumentOutOfRangeException(nameof(CurrentRow), "Selected ro");
+				if (value > Height || value < 0)
+					throw new ArgumentOutOfRangeException(nameof(CurrentRow), "Selected row is out of canvas's height");
 
 				_currentRow = value;
 			}
@@ -37,7 +55,12 @@ namespace DrunkenMonk.Data
 
 		public TextCanvas()
 		{
-			ScreenBuffer = new List<string>();
+			 buffer = new List<string>();
+		}
+
+		public TextCanvas(List<string> buffer)
+		{
+			this.buffer = buffer;
 		}
 	}
 }
