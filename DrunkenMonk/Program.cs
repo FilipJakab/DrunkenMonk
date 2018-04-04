@@ -174,7 +174,7 @@ namespace DrunkenMonk
 					// TODO: Move constnat numbres to App.config
 					Simulation simulation = (simulationResult?.Obstacle ?? newPlayerPosition)
 						.SimulateCollision(
-							newPlayerPosition,
+							lastPosition,
 							newPlayerDirection,
 							3, 4);
 
@@ -185,7 +185,7 @@ namespace DrunkenMonk
 						return !newPosition.PredictCollision(context.Enemies.Select(enemy => enemy.Position));
 					});
 
-					newPlayerPosition = simulationResult.LastSafePosition;
+					lastPosition = simulationResult.LastSafePosition;
 				} while (!simulationResult.HasSuccessfulyFinished);
 
 				context.Player.Position = simulationResult.LastSafePosition;
@@ -201,9 +201,9 @@ namespace DrunkenMonk
 					// TODO: Move constnat numbres to App.config
 					if (!simulationResult?.HasSuccessfulyFinished ?? false)
 					{
-						simulation = newPlayerPosition
+						simulation = lastPosition
 							.SimulateCollision(
-								simulationResult.LastSafePosition,
+								newPlayerPosition,
 								newPlayerDirection,
 								3, 4);
 
@@ -213,7 +213,7 @@ namespace DrunkenMonk
 					{
 						simulation = newPlayerPosition
 							.SimulateTrip(
-								simulationResult?.LastSafePosition ?? context.Player.Position,
+								simulationResult?.LastSafePosition ?? lastPosition,
 								newPlayerDirection,
 								2, 4);
 					}
@@ -225,6 +225,7 @@ namespace DrunkenMonk
 					}, true);
 
 					newPlayerPosition = simulationResult.Obstacle;
+					lastPosition = simulationResult.LastSafePosition;
 				} while (!simulationResult.HasSuccessfulyFinished);
 
 				context.Player.Position = simulationResult.LastSafePosition;

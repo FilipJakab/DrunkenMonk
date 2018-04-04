@@ -157,7 +157,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(position.X, position.Y);
 
-			char renderChar = leaveTrail ? trailChar ?? CharMap.LightTrail : CharMap.Space;
+			char renderChar = leaveTrail ? (trailChar ?? CharMap.LightTrail) : CharMap.Space;
 
 			Console.Write(renderChar);
 		}
