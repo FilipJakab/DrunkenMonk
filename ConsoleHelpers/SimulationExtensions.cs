@@ -1,5 +1,6 @@
 ﻿using System;
 using DrunkenMonk.Data;
+using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Enums;
 using NLog;
 

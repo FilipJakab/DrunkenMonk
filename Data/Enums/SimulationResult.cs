@@ -1,4 +1,6 @@
-﻿namespace DrunkenMonk.Data.Enums
+﻿using DrunkenMonk.Data.Base;
+
+namespace DrunkenMonk.Data.Enums
 {
 	public class SimulationResult
 	{

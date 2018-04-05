@@ -72,13 +72,14 @@ namespace DrunkenMonk.ConsoleHelpers
 					return;
 				}
 
+				// TODO: Move to config/constnats
 				Console.ForegroundColor = ConsoleColor.Cyan;
 
 				brush.Render(canvas, currentPosition, simulation.RenderCharacter);
 
 				Console.ResetColor();
 
-#warning Move delayTime to constants / Appconfig
+				// TODO: Move delayTime to constants / Appconfig
 				Thread.Sleep(350);
 
 				brush.Derender(canvas, currentPosition);

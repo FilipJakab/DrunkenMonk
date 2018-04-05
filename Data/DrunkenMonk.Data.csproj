@@ -44,13 +44,16 @@
     <Compile Include="Enums\Flags.cs" />
     <Compile Include="Enums\MenuPosition.cs" />
     <Compile Include="Enums\SimulationResult.cs" />
+    <Compile Include="Exceptions\InvalidTypeException.cs" />
+    <Compile Include="PathFinder\Context.cs" />
+    <Compile Include="PathFinder\Position.cs" />
     <Compile Include="Simulation.cs" />
     <Compile Include="Constants\CharMap.cs" />
     <Compile Include="Enums\Direction.cs" />
     <Compile Include="Base\Canvas.cs" />
     <Compile Include="Enums\UserAction.cs" />
     <Compile Include="GameContext.cs" />
-    <Compile Include="Position.cs" />
+    <Compile Include="Base\Position.cs" />
     <Compile Include="Enemy.cs" />
     <Compile Include="Enums\DifficultyLevel.cs" />
     <Compile Include="Menu.cs" />

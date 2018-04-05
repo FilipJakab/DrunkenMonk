@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="DialogProvider.cs" />
     <Compile Include="NPCProvider.cs" />
+    <Compile Include="PathFinderProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
