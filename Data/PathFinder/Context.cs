@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace DrunkenMonk.Data.PathFinder
 {
@@ -6,12 +7,7 @@ namespace DrunkenMonk.Data.PathFinder
 	{
 		public List<Position> OpenList { get; set; }
 
-		public List<List<Position>> PosibleSolutions { get; set; } = new List<List<Position>>
-		{
-			new List<Position>()
-		};
-
-		public int CurrentSolutionIndex { get; set; }
+		public List<Position> ClosedList { get; set; }
 
 		public Base.Position BasePosition { get; set; }
 
@@ -22,6 +18,6 @@ namespace DrunkenMonk.Data.PathFinder
 		/// </summary>
 		public bool[,] Field { get; set; }
 
-		public bool? TraceFound { get; set; } = null;
+		public List<Position> Solution { get; set; } = new List<Position>();
 	}
 }

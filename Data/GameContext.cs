@@ -7,6 +7,8 @@ namespace DrunkenMonk.Data
 	{
 		public Player Player { get; set; }
 
+		public Position Target { get; set; }
+
 		public IEnumerable<Enemy> Enemies { get; set; }
 
 		public Canvas Square { get; set; }

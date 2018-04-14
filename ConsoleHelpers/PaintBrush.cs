@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Constants;
@@ -14,7 +15,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 		private readonly bool leaveTrail;
 
-		public PaintBrush(bool leaveTrail = true)
+		public PaintBrush(bool leaveTrail = false)
 		{
 			logger = LogManager.GetCurrentClassLogger();
 
@@ -33,6 +34,51 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(2, -1, false);
 			Console.Write(CharMap.Space + canvas.Title + CharMap.Space);
+		}
+
+		public void ShowPath(
+			Canvas canvas,
+			List<Position> path,
+			int visibleLength = 10,
+			ConsoleColor? foregroundColor = null,
+			ConsoleColor? backgroundColor = null,
+			bool animated = false,
+			bool underlineTrail = false,
+			char? underlineChar = null,
+			int animationDelayMillis = 250,
+			int visibleFor = 1000,
+			char renderChar = CharMap.FullBlock)
+		{
+			// No need of derendering => will derendered as visiblePath is rendering/derendering
+			if (underlineTrail)
+				Render(canvas, path, underlineChar ?? CharMap.LightTrail);
+
+			for (int i = 0; i < path.Count; i++)
+			{
+				Render(canvas, path[i], renderChar,
+					foregroundColor ?? Console.ForegroundColor,
+					foregroundColor ?? Console.ForegroundColor);
+
+				if (animated)
+					Thread.Sleep(animationDelayMillis);
+
+				if (i >= visibleLength)
+					Derender(canvas, path[i - visibleLength], underlineTrail, underlineChar);
+			}
+
+			for (int i = path.Count - 1 - visibleLength; i < path.Count; i++)
+			{
+				if (animated)
+					Thread.Sleep(animationDelayMillis);
+
+				Derender(canvas, path[i], underlineTrail, underlineChar);
+			}
+
+			Thread.Sleep(visibleFor);
+
+			// Derender remaining positions
+			foreach (var position in path)
+				Derender(canvas, position);
 		}
 
 		/// <param name="menu"></param>
@@ -151,6 +197,11 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <param name="trailChar"></param>
 		public void Derender(Canvas canvas, Position position, char? trailChar = null)
 		{
+			Derender(canvas, position, leaveTrail, trailChar);
+		}
+
+		private void Derender(Canvas canvas, Position position, bool leaveTrail, char? trailChar = null)
+		{
 			logger.Trace("Derendering position");
 
 			logger.Debug($"Derendering position {{{position.X}, {position.Y}}} in canvas {canvas.Title}");
@@ -177,8 +228,42 @@ namespace DrunkenMonk.ConsoleHelpers
 			}
 		}
 
-		public void Render(Canvas canvas, Position position, char character)
+		public void Derender(Canvas canvas, bool[,] positions, char? trailChar = null)
 		{
+			for (int y = 0; y < positions.GetLength(0); y++)
+			{
+				for (int x = 0; x < positions.GetLength(1); x++)
+				{
+					Derender(canvas, new Position(x, y), trailChar);
+				}
+			}
+		}
+
+		public void EraseCanvas(Canvas canvas)
+		{
+			for (int y = 0; y < canvas.ContentHeight; y++)
+			{
+				for (int x = 0; x < canvas.ContentWidth; x++)
+				{
+					canvas.SetCursorPosition(x, y);
+					Console.Write(CharMap.Space);
+				}
+			}
+		}
+
+		public void Render(
+			Canvas canvas,
+			Position position,
+			char character,
+			ConsoleColor? foregroundColor = null,
+			ConsoleColor? backgroundColor = null)
+		{
+			ConsoleColor baseForegroundColor = Console.ForegroundColor;
+			ConsoleColor baseBackgroundColor = Console.BackgroundColor;
+
+			Console.BackgroundColor = backgroundColor ?? baseBackgroundColor;
+			Console.ForegroundColor = foregroundColor ?? baseForegroundColor;
+
 			logger.Trace("Rendering position");
 
 			logger.Debug($"Rendering character at {{{position.X}, {position.Y}}} in canvas: {canvas.Title}");
@@ -186,21 +271,51 @@ namespace DrunkenMonk.ConsoleHelpers
 			canvas.SetCursorPosition(position.X, position.Y);
 
 			Console.Write(character);
+
+			Console.ForegroundColor = baseForegroundColor;
+			Console.BackgroundColor = baseBackgroundColor;
 		}
 
-		public void Render(Canvas canvas, IEnumerable<Position> obstacles, char character)
+		public void Render(
+			Canvas canvas,
+			List<Position> obstacles,
+			char character,
+			ConsoleColor? foregroundColor = null,
+			ConsoleColor? backgroundColor = null)
 		{
 			logger.Trace("Rendering popsitions");
 
-			Position[] positions = obstacles as Position[] ?? obstacles.ToArray();
+			logger.Debug($"Rendering {obstacles.Count} characters in canvas {canvas.Title}");
 
-			logger.Debug($"Rendering {positions.Length} characters in canvas {canvas.Title}");
+			foreach (Position position in obstacles)
+				Render(canvas, position, character,
+					foregroundColor,
+					backgroundColor);
+		}
 
-			foreach (Position position in positions)
+		public void Render(Canvas canvas, IEnumerable<Data.PathFinder.Position> obstacles, TimeSpan delay)
+		{
+			foreach (Data.PathFinder.Position obstacle in obstacles)
 			{
-				canvas.SetCursorPosition(position.X, position.Y);
+				Thread.Sleep(delay);
+				Render(canvas, new Position(obstacle.X, obstacle.Y), obstacle.DistanceFromStart.ToString().Last());
+			}
+		}
 
-				Console.Write(character);
+		public void Render(
+			Canvas canvas,
+			bool[,] positions,
+			char trueChar = CharMap.DarkTrail,
+			char falseChar = CharMap.Space)
+		{
+			for (int y = 0; y < positions.GetLength(0); y++)
+			{
+				for (int x = 0; x < positions.GetLength(1); x++)
+				{
+					Render(canvas, new Position(x, y), positions[y, x]
+					? trueChar
+					: falseChar);
+				}
 			}
 		}
 

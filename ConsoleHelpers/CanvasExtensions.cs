@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Base;
@@ -25,8 +26,8 @@ namespace DrunkenMonk.ConsoleHelpers
 				// Substract walls
 				if (left >= canvas.ContentWidth || left < 0)
 					throw new ArgumentOutOfRangeException(nameof(left), $"Parameter is out of Map; width: {canvas.Width}, left: {left}");
-				if (top >= canvas.Height - 2 || top < 0)
-					throw new ArgumentOutOfRangeException(nameof(top), $"Parameter is out of Map; height: {canvas.Height}, top: {top}");
+				if (top >= canvas.ContentHeight || top < 0)
+					throw new ArgumentOutOfRangeException(nameof(top), $"Parameter is out of Map; content height: {canvas.ContentHeight}, top: {top}");
 			}
 
 			// + 1 because top-left border is at StartX and StartY
@@ -41,15 +42,16 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <param name="canvas"></param>
 		/// <param name="simulation"></param>
 		/// <param name="validate">Return true if position is valid</param>
+		/// <param name="brush"></param>
 		/// <param name="isTrip"></param>
 		/// <returns>Last safe position</returns>
 		public static SimulationResult ExecuteSimulation(
 			this Canvas canvas,
 			Simulation simulation,
 			Func<Position, bool> validate,
+			PaintBrush brush,
 			bool isTrip = false)
 		{
-			PaintBrush brush = new PaintBrush();
 
 			// BassePosition is obstacle
 			//brush.Derender(canvas, simulation.BasePosition);
@@ -159,7 +161,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			 * Trim 2 becouse of Width and Height contains walls as well
 			 * Implicit value for bool is False -> No need to set it manually
 			 */
-			bool[,] array = new bool[canvas.Height - 2, canvas.ContentWidth];
+			bool[,] array = new bool[canvas.ContentHeight, canvas.ContentWidth];
 
 			foreach (Position obstacle in obstacles)
 			{

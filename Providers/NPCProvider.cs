@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Base;
@@ -20,11 +21,10 @@ namespace DrunkenMonk.Providers
 		/// <summary>
 		/// Generates Enemies with Relavtive postions to canvas
 		/// </summary>
-		/// <param name="enemies"></param>
 		/// <param name="canvas"></param>
-		/// <param name="player"></param>
+		/// <param name="excludes"></param>
 		/// <param name="amount"></param>
-		public List<Enemy> GenerateEnemies(Canvas canvas, Player player, int amount)
+		public List<Enemy> GenerateEnemies(Canvas canvas, List<Position> excludes, int amount)
 		{
 			logger.Trace($"{nameof(GenerateEnemies)} method called");
 
@@ -36,9 +36,9 @@ namespace DrunkenMonk.Providers
 			{
 				// Positions are relative
 				int x = random.Next(0, canvas.ContentWidth);
-				int y = random.Next(0, canvas.Height - 2);
+				int y = random.Next(0, canvas.ContentHeight);
 
-				if (x == player.Position.X && y == player.Position.Y)
+				if (excludes.Any(p => p.X == x && p.Y == y))
 				{
 					i--;
 					continue;
