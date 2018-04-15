@@ -1,2 +1,2 @@
 # DrunkenMonk
-Drunken Monk Challange from KEEN|MATE training repository
+Drunken Monk Challange dedrived from KEEN|MATE training repository
