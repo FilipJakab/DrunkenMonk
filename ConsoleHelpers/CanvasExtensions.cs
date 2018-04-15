@@ -25,9 +25,9 @@ namespace DrunkenMonk.ConsoleHelpers
 			{
 				// Substract walls
 				if (left >= canvas.ContentWidth || left < 0)
-					throw new ArgumentOutOfRangeException(nameof(left), $"Parameter is out of Map; width: {canvas.Width}, left: {left}");
+					return;// throw new ArgumentOutOfRangeException(nameof(left), $"Parameter is out of Map; width: {canvas.Width}, left: {left}");
 				if (top >= canvas.ContentHeight || top < 0)
-					throw new ArgumentOutOfRangeException(nameof(top), $"Parameter is out of Map; content height: {canvas.ContentHeight}, top: {top}");
+					return; // throw new ArgumentOutOfRangeException(nameof(top), $"Parameter is out of Map; content height: {canvas.ContentHeight}, top: {top}");
 			}
 
 			// + 1 because top-left border is at StartX and StartY
