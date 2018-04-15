@@ -45,7 +45,7 @@ namespace DrunkenMonk.Providers
 				if (neighbors.Count > 1)
 					return;
 
-				//brush.Render(canvas, new Data.Base.Position(basePosition.X, basePosition.Y), CharMap.LightTrail);
+				//brush.Render(canvas, new Data.Base.Position(basePosition.X, basePosition.Y), CharacterMap.LightTrail);
 
 				if (neighbors.Count == 0)
 					return;

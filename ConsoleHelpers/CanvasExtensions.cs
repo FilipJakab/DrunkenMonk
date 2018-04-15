@@ -62,7 +62,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			void SimulationIteration(Action<Position> modification)
 			{
 				if (isTrip)
-					brush.Derender(canvas, currentPosition, CharMap.MediumTrail);
+					brush.Derender(canvas, currentPosition, CharacterMap.MediumTrail);
 
 				modification(currentPosition);
 

@@ -27,7 +27,7 @@ namespace DrunkenMonk.Providers
 		/// <returns></returns>
 		public async Task<TReturnType> AskUser<TReturnType>(Menu<TReturnType> menu)
 		{
-			logger.Trace($"{nameof(AskUser)} method called");
+			logger.Trace($"Method {nameof(AskUser)} called");
 
 			Console.Clear();
 
@@ -39,87 +39,50 @@ namespace DrunkenMonk.Providers
 
 			do
 			{
-				key = await Task.Run(() => Console.ReadKey().Key);
+				key = await Task.Run(() => Console.ReadKey(true).Key);
 
 				switch (key)
 				{
 					case ConsoleKey.UpArrow:
-						{
-							// overflow validation
-							if (menu.Options.ToList().IndexOf(menu.SelectedOption ?? menu.Options.First()) == 0)
-								continue;
+					{
+						int newIndex = menu.Choices.ToList().IndexOf(menu.SelectedChoice) - 1;
+						// overflow validation
+						// todo implement "rotating option for Menu model" (if selected q is 0 and direction is UP select last q and vise versa)
+						if (newIndex < 0)
+							continue;
 
-							brush.SelectOption(menu, Menu<TReturnType>.OptionChangeDirection.Up);
-							break;
-						}
+						brush.DeselectChoice(menu);
+
+						menu.SelectedChoice = menu.Choices.ToList()[newIndex];
+
+						brush.SelectChoice(menu);
+						break;
+					}
 					case ConsoleKey.DownArrow:
-						{
-							if (menu.Options.ToList().IndexOf(menu.SelectedOption ?? menu.Options.First()) == menu.Options.Count - 1)
-								continue;
+					{
+						int newIndex = menu.Choices.ToList().IndexOf(menu.SelectedChoice) + 1;
 
-							brush.SelectOption(menu, Menu<TReturnType>.OptionChangeDirection.Down);
-							break;
-						}
+						// todo implement "rotating option for Menu model" (if selected q is 0 and direction is UP select last q and vise versa)
+						if (newIndex >= menu.Choices.Count)
+							continue;
+
+						brush.DeselectChoice(menu);
+
+						menu.SelectedChoice = menu.Choices.ToList()[newIndex];
+
+						brush.SelectChoice(menu);
+						break;
+					}
 				}
 			} while (key != ConsoleKey.Enter);
 
 			Console.Clear();
 
+			logger.Trace($"Method {nameof(AskUser)} ended");
 
-			return menu.SelectedOption != null
-				? menu.SelectedOption.Value.Key
-				: menu.Options.First().Key;
+			return menu.SelectedChoice.Key;
 		}
 
-		///// <summary>
-		///// Selects Next question.
-		///// There must be selected question in Menu (via Menu.RenderMenu())
-		///// </summary>
-		///// <typeparam name="T"></typeparam>
-		///// <param name="menu"></param>
-		///// <param name="direction"></param>
-		//public void SelectQuestion<T>(Menu<T> menu, Menu<T>.OptionChangeDirection direction)
-		//{
-		//	logger.Trace($"{nameof(SelectQuestion)} method called");
-
-		//	int startY = (Console.WindowHeight - menu.Rows) / 2,
-		//		startX = (Console.WindowWidth - menu.MenuWidth) / 2;
-
-		//	#region Trim last selected O. from UI
-
-		//	KeyValuePair<T, string> lastSelectedQuestion = menu.SelectedOption ?? menu.Options.First();
-
-		//	// Get Index of selected row
-		//	int lastIndex = menu.Options.ToList().IndexOf(lastSelectedQuestion);
-
-		//	// Trim prefix-bracket
-		//	Console.SetCursorPosition(startX - 2, startY + lastIndex);
-		//	Console.Write(CharMap.Space);
-
-		//	// Trim postfix-bracket
-		//	Console.SetCursorPosition(
-		//		startX + (menu.SelectedOption?.Value.Length ?? menu.Options.First().Value.Length) - 1 + 2, startY + lastIndex);
-		//	Console.Write(CharMap.Space);
-
-		//	#endregion
-
-		//	#region Select O. in UI
-
-		//	int newIndex = menu.Options
-		//									 .ToList().IndexOf(lastSelectedQuestion) + (direction == Menu<T>.OptionChangeDirection.Down ? 1 : -1);
-
-		//	if (newIndex < 0 || newIndex >= menu.Options.Count)
-		//		return;
-
-		//	menu.SelectedOption = menu.Options.ToList()[newIndex];
-
-		//	Console.SetCursorPosition(startX - 2, startY + newIndex);
-		//	Console.Write('[');
-
-		//	Console.SetCursorPosition(startX + menu.SelectedOption.Value.Length - 1 + 2, startY + newIndex);
-		//	Console.Write(']');
-
-		//	#endregion
-		//}
+		// todo implement PromtUser method
 	}
 }

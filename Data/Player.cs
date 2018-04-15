@@ -6,7 +6,7 @@ namespace DrunkenMonk.Data
 {
 	public class Player : Entity
 	{
-		public const char BodyCharacter = CharMap.Player;
+		public const char BodyCharacter = CharacterMap.Player;
 
 		public DifficultyLevel DifficultyLevel { get; set; }
 

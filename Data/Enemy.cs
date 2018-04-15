@@ -5,6 +5,6 @@ namespace DrunkenMonk.Data
 {
 	public class Enemy : Entity
 	{
-		public const char BodyCharacter = CharMap.Enemy;
+		public const char BodyCharacter = CharacterMap.Enemy;
 	}
 }

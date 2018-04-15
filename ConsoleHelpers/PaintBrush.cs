@@ -5,6 +5,7 @@ using System.Threading;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Constants;
+using DrunkenMonk.Data.Enums;
 using NLog;
 
 namespace DrunkenMonk.ConsoleHelpers
@@ -28,12 +29,15 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// </summary>
 		public void RenderCanvas(Canvas canvas)
 		{
-			logger.Trace($"Rendering canvas {canvas.Title}");
+			logger.Trace($"Method {nameof(RenderCanvas)} called");
+			logger.Info($"Rendering canvas {canvas.Title}");
 
 			DrawRectangle(canvas.StartX, canvas.StartY, canvas.Width, canvas.Height);
 
 			canvas.SetCursorPosition(2, -1, false);
-			Console.Write(CharMap.Space + canvas.Title + CharMap.Space);
+			Console.Write(CharacterMap.Space + canvas.Title + CharacterMap.Space);
+
+			logger.Trace($"Method {nameof(RenderCanvas)} ended");
 		}
 
 		public void ShowPath(
@@ -45,13 +49,16 @@ namespace DrunkenMonk.ConsoleHelpers
 			bool animated = false,
 			bool underlineTrail = false,
 			char? underlineChar = null,
-			int animationDelayMillis = 250,
+			int animationDelay = 250,
 			int visibleFor = 1000,
-			char renderChar = CharMap.FullBlock)
+			char renderChar = CharacterMap.FullBlock)
 		{
+			logger.Trace($"Method {nameof(ShowPath)} called");
+			logger.Info($"Rendering path of {path.Count} elements on {canvas.Title} canvas");
+
 			// No need of derendering => will derendered as visiblePath is rendering/derendering
 			if (underlineTrail)
-				Render(canvas, path, underlineChar ?? CharMap.LightTrail);
+				Render(canvas, path, underlineChar ?? CharacterMap.LightTrail);
 
 			for (int i = 0; i < path.Count; i++)
 			{
@@ -60,7 +67,7 @@ namespace DrunkenMonk.ConsoleHelpers
 					foregroundColor ?? Console.ForegroundColor);
 
 				if (animated)
-					Thread.Sleep(animationDelayMillis);
+					Thread.Sleep(animationDelay);
 
 				if (i >= visibleLength)
 					Derender(canvas, path[i - visibleLength], underlineTrail, underlineChar);
@@ -69,7 +76,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			for (int i = path.Count - 1 - visibleLength; i < path.Count; i++)
 			{
 				if (animated)
-					Thread.Sleep(animationDelayMillis);
+					Thread.Sleep(animationDelay);
 
 				Derender(canvas, path[i], underlineTrail, underlineChar);
 			}
@@ -79,16 +86,20 @@ namespace DrunkenMonk.ConsoleHelpers
 			// Derender remaining positions
 			foreach (var position in path)
 				Derender(canvas, position);
+
+			logger.Trace($"Mathod call {nameof(ShowPath)} ended");
 		}
 
+		/// <summary>
+		///		Renders Menu in "Full-screen" mode
+		/// </summary>
 		/// <param name="menu"></param>
 		/// <param name="optionFormat">Format of question to be displayed</param>
 		public void RenderMenu<T>(Menu<T> menu, string optionFormat = "{0}")
 		{
-			logger.Trace("Method for rendering Menu called");
+			logger.Trace($"Method for {nameof(RenderMenu)} called");
 
-			int startX = menu.StartX,
-				startY = menu.StartY;
+			int startY = menu.StartY;
 
 			// Render title
 			if (!string.IsNullOrEmpty(menu.Question))
@@ -100,15 +111,19 @@ namespace DrunkenMonk.ConsoleHelpers
 				Console.Write(menu.Question);
 			}
 
-			// RenderMenu Options
-			foreach (KeyValuePair<T, string> option in menu.Options)
+			// RenderMenu Choices
+			foreach (KeyValuePair<T, string> option in menu.Choices)
 			{
-				bool isSelected = Equals((menu.SelectedOption ?? menu.Options.First()), option);
+				bool isSelected = Equals(menu.SelectedChoice, option);
 
 				if (isSelected)
 				{
-					Console.SetCursorPosition(menu.CenterXPosition - (option.Value.Length / 2) - 3, startY);
-					Console.Write('[');
+					Console.SetCursorPosition(
+						menu.CenterXPosition
+						- (option.Value.Length / 2)
+						- (menu.SelectorDistance + menu.LeftSelector.Length),
+						startY);
+					Console.Write(menu.LeftSelector);
 				}
 
 				Console.SetCursorPosition(menu.CenterXPosition - (option.Value.Length / 2), startY++);
@@ -116,77 +131,80 @@ namespace DrunkenMonk.ConsoleHelpers
 
 				if (!isSelected) continue;
 
-				Console.Write("  ]");
+				Console.Write(menu.RightSelector.PadLeft(menu.RightSelector.Length + menu.SelectorDistance));
 			}
 
-			menu.SelectedOption = menu.Options.First();
+			logger.Trace($"Method {nameof(RenderMenu)} ended");
 		}
 
-		public void SelectOption<T>(Menu<T> menu, Menu<T>.OptionChangeDirection newDirection)
+		private int GetLeftSelectorXPos<T>(Menu<T> menu)
 		{
-			logger.Trace("Method for selecting another option of Menu called");
+			return menu.CenterXPosition
+						 - (menu.SelectedChoice.Value.Length / 2)
+						 - (menu.SelectorDistance + menu.LeftSelector.Length);
+		}
 
-			int startY = menu.StartY + 1;
+		private int GetRightSelectorXPos<T>(Menu<T> menu)
+		{
+			return menu.CenterXPosition
+			       + ((int) Math.Ceiling(menu.SelectedChoice.Value.Length / 2.0) - 1)
+			       + menu.SelectorDistance + menu.RightSelector.Length;
+		}
 
-			#region Trim selected option
+		/// <summary>
+		/// Erase selectors from selected choice,
+		/// Uses SelectedChoice property of Menu
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="menu"></param>
+		public void DeselectChoice<T>(Menu<T> menu)
+		{
+			logger.Trace($"Method {nameof(DeselectChoice)} called");
 
-			int lastIndex = menu.Options.ToList().IndexOf(menu.SelectedOption ?? menu.Options.ToList().First());
+			//KeyValuePair<T, string> selectedOptionOld = menu.SelectedChoice ?? menu.Choices.First();
 
-			// Validation
-			if (lastIndex == 0 && newDirection == Menu<T>.OptionChangeDirection.Up
-					|| lastIndex == menu.Options.Count - 1 && newDirection == Menu<T>.OptionChangeDirection.Down)
-				return;
+			// Last selected option's index
+			int index = menu.Choices.ToList().IndexOf(menu.SelectedChoice);
+
+			// Erase left selector
+			Console.SetCursorPosition(
+				GetLeftSelectorXPos(menu),
+				menu.StartY + 1 + index);
+			Console.Write(CharacterMap.Space);
+
+			// Erase right selector
+			Console.SetCursorPosition(
+				GetRightSelectorXPos(menu),
+				menu.StartY + 1 + index);
+			Console.Write(CharacterMap.Space);
+
+			logger.Trace($"Method {nameof(DeselectChoice)} ended");
+		}
+
+		/// <summary>
+		///	Draws selectors around newly selected choice
+		/// </summary>
+		/// <exception cref="ArgumentOutOfRangeException">newIdex param must be in range of menu's options</exception>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="menu"></param>
+		/// <param name="newIndex"></param>
+		public void SelectChoice<T>(Menu<T> menu)
+		{
+			logger.Trace($"Method {nameof(SelectChoice)} called");
+
+			int newIndex = menu.Choices.ToList().IndexOf(menu.SelectedChoice);
 
 			Console.SetCursorPosition(
-				menu.CenterXPosition - ((menu.SelectedOption?.Value.Length ?? menu.Options.First().Value.Length) / 2) - 3,
-				startY + lastIndex);
-			Console.Write(CharMap.Space);
+				GetLeftSelectorXPos(menu),
+				menu.StartY + 1 + newIndex);
+			Console.Write(menu.LeftSelector);
 
 			Console.SetCursorPosition(
-				menu.CenterXPosition + ((menu.SelectedOption?.Value.Length ?? menu.Options.First().Value.Length) / 2) + 3,
-				startY + lastIndex);
-			Console.Write(CharMap.Space);
+				GetRightSelectorXPos(menu),
+				menu.StartY + 1 + newIndex);
+			Console.Write(menu.RightSelector);
 
-			#endregion
-
-			#region Select new option
-
-			int newIndex;
-
-			switch (newDirection)
-			{
-				case Menu<T>.OptionChangeDirection.Up:
-					{
-						newIndex = lastIndex - 1;
-
-						break;
-					}
-				case Menu<T>.OptionChangeDirection.Down:
-					{
-						newIndex = lastIndex + 1;
-
-						break;
-					}
-				default:
-					{
-						newIndex = 0;
-						break;
-					}
-			}
-
-			menu.SelectedOption = menu.Options.ToArray()[newIndex];
-
-			Console.SetCursorPosition(
-				menu.CenterXPosition - (menu.SelectedOption.Value.Value.Length / 2) - 3,
-				startY + newIndex);
-			Console.Write('[');
-
-			Console.SetCursorPosition(
-				menu.CenterXPosition + (menu.SelectedOption.Value.Value.Length / 2) + 3,
-				startY + newIndex);
-			Console.Write(']');
-
-			#endregion
+			logger.Trace($"Method {nameof(SelectChoice)} ended");
 		}
 
 		/// <summary>
@@ -208,7 +226,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(position.X, position.Y);
 
-			char renderChar = leaveTrail ? (trailChar ?? CharMap.LightTrail) : CharMap.Space;
+			char renderChar = leaveTrail ? (trailChar ?? CharacterMap.LightTrail) : CharacterMap.Space;
 
 			Console.Write(renderChar);
 		}
@@ -224,7 +242,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			foreach (Position position in positions)
 			{
 				canvas.SetCursorPosition(position.X, position.Y);
-				Console.Write(CharMap.Space);
+				Console.Write(CharacterMap.Space);
 			}
 		}
 
@@ -246,7 +264,7 @@ namespace DrunkenMonk.ConsoleHelpers
 				for (int x = 0; x < canvas.ContentWidth; x++)
 				{
 					canvas.SetCursorPosition(x, y);
-					Console.Write(CharMap.Space);
+					Console.Write(CharacterMap.Space);
 				}
 			}
 		}
@@ -305,8 +323,8 @@ namespace DrunkenMonk.ConsoleHelpers
 		public void Render(
 			Canvas canvas,
 			bool[,] positions,
-			char trueChar = CharMap.DarkTrail,
-			char falseChar = CharMap.Space)
+			char trueChar = CharacterMap.DarkTrail,
+			char falseChar = CharacterMap.Space)
 		{
 			for (int y = 0; y < positions.GetLength(0); y++)
 			{
@@ -339,32 +357,32 @@ namespace DrunkenMonk.ConsoleHelpers
 					if (y == startY && x == startX)
 					{
 						Console.SetCursorPosition(x, y);
-						Console.Write(CharMap.TopLeftCornerWall);
+						Console.Write(CharacterMap.TopLeftCornerWall);
 					}
 					else if (y == startY && x == startX + width - 1)
 					{
 						Console.SetCursorPosition(x, y);
-						Console.Write(CharMap.TopRightCornerWall);
+						Console.Write(CharacterMap.TopRightCornerWall);
 					}
 					else if (y == startY + height - 1 && x == startX)
 					{
 						Console.SetCursorPosition(x, y);
-						Console.Write(CharMap.DownLeftCornerWall);
+						Console.Write(CharacterMap.DownLeftCornerWall);
 					}
 					else if (y == startY + height - 1 && x == startX + width - 1)
 					{
 						Console.SetCursorPosition(x, y);
-						Console.Write(CharMap.DownRightCornerWall);
+						Console.Write(CharacterMap.DownRightCornerWall);
 					}
 					else if (y == startY || y == startY + height - 1)
 					{
 						Console.SetCursorPosition(x, y);
-						Console.Write(CharMap.HorizontalWall);
+						Console.Write(CharacterMap.HorizontalWall);
 					}
 					else if (x == startX || x == startX + width - 1)
 					{
 						Console.SetCursorPosition(x, y);
-						Console.Write(CharMap.VerticalWall);
+						Console.Write(CharacterMap.VerticalWall);
 					}
 				}
 			}

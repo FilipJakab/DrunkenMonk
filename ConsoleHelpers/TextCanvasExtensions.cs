@@ -133,7 +133,7 @@ namespace DrunkenMonk.ConsoleHelpers
 				for (int y = 0; y < canvas.Height - 2; y++)
 				{
 					canvas.SetCursorPosition(0, y);
-					Console.Write(CharMap.Space.Repeat(canvas.ContentWidth));
+					Console.Write(CharacterMap.Space.Repeat(canvas.ContentWidth));
 				}
 				return;
 			}
@@ -144,7 +144,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			canvas.SetCursorPosition(0, rowIndex.Value);
 
-			Console.Write(CharMap.Space.Repeat(canvas.ContentWidth));
+			Console.Write(CharacterMap.Space.Repeat(canvas.ContentWidth));
 		}
 	}
 }

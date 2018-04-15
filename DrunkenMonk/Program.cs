@@ -84,11 +84,11 @@ namespace DrunkenMonk
 				context.Square,
 				solution.Path,
 				animated: true,
-				animationDelayMillis: 10,
+				animationDelay: 10,
 				visibleLength: 40,
 				visibleFor: 300,
 				underlineTrail: true,
-				underlineChar: CharMap.LightTrail,
+				underlineChar: CharacterMap.LightTrail,
 				foregroundColor: ConsoleColor.Green,
 				backgroundColor: ConsoleColor.Cyan);
 
@@ -486,7 +486,7 @@ namespace DrunkenMonk
 			ctx.Player.DifficultyLevel = await dialogProvider.AskUser(new Menu<DifficultyLevel>
 			{
 				Question = "Select difficulty:",
-				Options = new Dictionary<DifficultyLevel, string>
+				Choices = new Dictionary<DifficultyLevel, string>
 				{
 					{
 						DifficultyLevel.Easy,

@@ -34,43 +34,6 @@ namespace DrunkenMonk.ConsoleHelpers
 			FillOptions options,
 			char filler = ' ')
 		{
-			#region Solution 1
-
-			//if (x.Length > length)
-			//{
-			//	return truncate 
-			//		? x.Substring(0, length)
-			//		: x;
-			//}
-
-			//return prepend
-			//	? filler.Repeat(length - x.Length) + x
-			//	: x + filler.Repeat(length - x.Length);
-
-			#endregion
-
-			#region Solution 2
-
-			//if (x.Length > length)
-			//{
-			//	if (!truncate) return x;
-			//	x = x.Substring(0, length);
-			//	return x;
-			//}
-
-			//if (prepend)
-			//{
-			//	x = filler.Repeat(length - x.Length) + x;
-			//	return x;
-			//}
-
-			//x = x + filler.Repeat(length - x.Length);
-			//return x;
-
-			#endregion
-
-			#region Solution 3 with Flags
-
 			if (x.Length > length)
 			{
 				// No truncate option
@@ -104,8 +67,6 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			x = x + filler.Repeat(length - x.Length);
 			return x;
-
-			#endregion
 		}
 	}
 }

@@ -11,7 +11,15 @@ namespace DrunkenMonk.Data
 
 		public string Question { get; set; }
 
-		public Dictionary<TReturnType, string> Options { get; set; }
+		public Dictionary<TReturnType, string> Choices { get; set; }
+
+		private KeyValuePair<TReturnType, string>? _selectedChoice;
+
+		public KeyValuePair<TReturnType, string> SelectedChoice
+		{
+			get => _selectedChoice ?? Choices.First();
+			set => _selectedChoice = value;
+		}
 
 		public RenderMenuPosition Position { get; set; } = RenderMenuPosition.Center;
 
@@ -37,6 +45,9 @@ namespace DrunkenMonk.Data
 			}
 		}
 
+		/// <summary>
+		/// Y axis level where the whole menu starts (Question Row included)
+		/// </summary>
 		public int StartY
 		{
 			get
@@ -59,6 +70,9 @@ namespace DrunkenMonk.Data
 			}
 		}
 
+		/// <summary>
+		/// Margin around menu
+		/// </summary>
 		public int Margin { get; set; } = 1;
 
 		public int CenterXPosition => StartX + (MenuWidth / 2);
@@ -70,21 +84,28 @@ namespace DrunkenMonk.Data
 		{
 			get
 			{
-				int maximalOption = Options.Max(q => q.Value.Length);
+				int maximalOption = Choices.Max(o => o.Value.Length);
 
 				return (maximalOption > Question.Length
 					? maximalOption
-					: Question.Length) + 6;
+					: Question.Length) + 4; // +4 becouse of selectors
 			}
 		}
 
+		public string LeftSelector { get; set; } = "[";
+
+		public string RightSelector { get; set; } = "]";
+
+		public int SelectorDistance { get; set; } = 1;
+
 		/// <summary>
-		/// Returns Total rows for current dialog (The Question included)
+		/// Returns Total rows for current dialog (The Question/Title included)
 		/// </summary>
-		public int Rows => Options.Count + 1;
+		public int Rows => Choices.Count + (!string.IsNullOrEmpty(Question) ? 0 : 1);
+	}
 
-		public KeyValuePair<TReturnType, string>? SelectedOption { get; set; }
-
+	public class Menu
+	{
 		public enum OptionChangeDirection
 		{
 			Up,

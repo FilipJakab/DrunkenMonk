@@ -1,6 +1,6 @@
 ﻿namespace DrunkenMonk.Data.Constants
 {
-	public class CharMap
+	public class CharacterMap
 	{
 		public const char FullBlock = '\u2588';
 
