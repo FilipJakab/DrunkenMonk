@@ -21,7 +21,7 @@ namespace DrunkenMonk.Data
 			set => _selectedChoice = value;
 		}
 
-		public RenderMenuPosition Position { get; set; } = RenderMenuPosition.Center;
+		public RenderPosition Position { get; set; } = RenderPosition.Center;
 
 		public int StartX
 		{
@@ -29,15 +29,15 @@ namespace DrunkenMonk.Data
 			{
 				switch (Position)
 				{
-					case RenderMenuPosition.TopLeft:
+					case RenderPosition.TopLeft:
 						return Margin;
-					case RenderMenuPosition.TopRight:
+					case RenderPosition.TopRight:
 						return Console.WindowWidth - MenuWidth + Margin;
-					case RenderMenuPosition.Center:
+					case RenderPosition.Center:
 						return (Console.WindowWidth - MenuWidth) / 2;
-					case RenderMenuPosition.BottomLeft:
+					case RenderPosition.BottomLeft:
 						return Margin;
-					case RenderMenuPosition.BottomRight:
+					case RenderPosition.BottomRight:
 						return Console.WindowWidth - MenuWidth - Margin;
 					default:
 						throw new ArgumentOutOfRangeException();
@@ -54,15 +54,15 @@ namespace DrunkenMonk.Data
 			{
 				switch (Position)
 				{
-					case RenderMenuPosition.TopLeft:
+					case RenderPosition.TopLeft:
 						return Margin;
-					case RenderMenuPosition.TopRight:
+					case RenderPosition.TopRight:
 						return Margin;
-					case RenderMenuPosition.Center:
+					case RenderPosition.Center:
 						return (Console.WindowHeight - Rows) / 2;
-					case RenderMenuPosition.BottomLeft:
+					case RenderPosition.BottomLeft:
 						return Console.WindowHeight - Rows - Margin;
-					case RenderMenuPosition.BottomRight:
+					case RenderPosition.BottomRight:
 						return Console.WindowHeight - Rows - Margin;
 					default:
 						throw new ArgumentOutOfRangeException();

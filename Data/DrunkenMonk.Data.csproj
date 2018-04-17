@@ -43,7 +43,7 @@
     <Compile Include="Base\Entity.cs" />
     <Compile Include="Enums\AxisPriority.cs" />
     <Compile Include="Enums\Flags.cs" />
-    <Compile Include="Enums\MenuPosition.cs" />
+    <Compile Include="Enums\RenderPositions.cs" />
     <Compile Include="Enums\SimulationResult.cs" />
     <Compile Include="Exceptions\InvalidTypeException.cs" />
     <Compile Include="PathFinder\Context.cs" />

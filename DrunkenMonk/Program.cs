@@ -18,7 +18,7 @@ namespace DrunkenMonk
 {
 	public class Program
 	{
-		static object ConsoleStreamGuardian = new object();
+		static object ConsoleGuardian = new object();
 
 		public static void Main()
 		{
@@ -34,53 +34,24 @@ namespace DrunkenMonk
 				MovementLog = new TextCanvas()
 			};
 
-			PaintBrush brush = new PaintBrush(ConsoleStreamGuardian);
+			PaintBrush brush = new PaintBrush(ConsoleGuardian);
 
 			NPCProvider npcProvider = new NPCProvider();
 
 			// Path finder
 			PathFinderProvider pathFinder = new PathFinderProvider();
 
-			Init(context, brush, logger).Wait();
-
-			#region PathFinder for securing game playability
-			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(context.Square, context.Player.DifficultyLevel, logger);
-			PathSolution solution;
-
-			do
-			{
-				context.Enemies = npcProvider.GenerateEnemies(context.Square, new List<Position>
-				{
-					context.Player.Position,
-					context.Target
-				}, amountOfPeopleOnSquare);
-
-				solution = PathFindingProcess(logger, context, brush, npcProvider, pathFinder);
-			} while (solution.Path.Count == 0);
-
-			#endregion
-
-			brush.Render(context.Square, context.Enemies.Select(x => x.Position).ToList(), Enemy.BodyCharacter);
-
-			brush.ShowPath(
-				context.Square,
-				solution.Path,
-				animated: true,
-				animationDelay: 10,
-				visibleLength: 40,
-				visibleFor: 300,
-				underlineTrail: true,
-				underlineChar: CharacterMap.LightTrail,
-				foregroundColor: ConsoleColor.Green,
-				backgroundColor: ConsoleColor.Cyan);
+			Init(context, brush, npcProvider, pathFinder, logger).Wait();
 
 			Timer timer = new Timer(state =>
 			{
-				lock (ConsoleStreamGuardian)
+				lock (ConsoleGuardian)
 				{
 					context.ScoreBoard.Clear();
-					context.ScoreBoard.WriteLine($"Current Time: {DateTime.Now: hh:mm:ss}");
-					context.ScoreBoard.WriteLine($"Position: [{context.Player.Position.X},{context.Player.Position.Y}]");
+					context.ScoreBoard
+						.WriteLine($"Current Time: {DateTime.Now:hh:mm:ss}");
+					context.ScoreBoard
+						.WriteLine($"Position: [{context.Player.Position.X:000},{context.Player.Position.Y:000}]");
 				}
 			}, null, 0, 1000);
 
@@ -143,7 +114,7 @@ namespace DrunkenMonk
 						}
 						case UserAction.Reload:
 						{
-							Reload(context, brush, timer, logger);
+							Reload(context, brush, npcProvider, pathFinder, timer, logger);
 							return;
 						}
 						case UserAction.ShowPath:
@@ -304,15 +275,13 @@ namespace DrunkenMonk
 			}
 		}
 
-		private static void Reload(GameContext ctx, PaintBrush brush, Timer timeTimer, Logger logger)
+		private static void Reload(GameContext ctx, PaintBrush brush, NPCProvider npcProvider, PathFinderProvider pathFinder, Timer timeTimer, Logger logger)
 		{
 			timeTimer.Change(UInt32.MaxValue, 0);
 
-			Init(ctx, brush, logger).Wait();
+			Init(ctx, brush, npcProvider, pathFinder, logger).Wait();
 
 			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(ctx.Square, ctx.Player.DifficultyLevel, logger);
-
-			NPCProvider npcProvider = new NPCProvider();
 
 			ctx.Enemies = npcProvider.GenerateEnemies(
 				ctx.Square,
@@ -427,7 +396,12 @@ namespace DrunkenMonk
 			return amount;
 		}
 
-		public static async Task Init(GameContext ctx, PaintBrush brush, Logger logger)
+		public static async Task Init(
+			GameContext ctx,
+			PaintBrush brush,
+			NPCProvider npcProvider,
+			PathFinderProvider pathFinder,
+			Logger logger)
 		{
 			logger.Trace("Init method called");
 
@@ -509,11 +483,34 @@ namespace DrunkenMonk
 						"I alcohol therefor I am"
 					}
 				},
-				Position = RenderMenuPosition.Center,
+				Position = RenderPosition.Center,
 				Margin = 1
 			}, brush);
 
 			logger.Debug($"User picked {ctx.Player.DifficultyLevel.ToString()}");
+
+			CancellationTokenSource notificationCts = dialogProvider.ShowNotification("Loading...", brush);
+
+			#region PathFinder for securing game playability
+			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(ctx.Square, ctx.Player.DifficultyLevel, logger);
+			PathSolution solution;
+
+			do
+			{
+				ctx.Enemies = npcProvider.GenerateEnemies(ctx.Square, new List<Position>
+				{
+					ctx.Player.Position,
+					ctx.Target
+				}, amountOfPeopleOnSquare);
+
+				solution = PathFindingProcess(logger, ctx, brush, npcProvider, pathFinder);
+			} while (solution.Path.Count == 0);
+
+			notificationCts.Cancel();
+
+			#endregion
+
+			#region Rendering
 
 			// Draws Walls for game field
 			brush.RenderCanvas(ctx.Square);
@@ -529,6 +526,24 @@ namespace DrunkenMonk
 			// Draws player
 			brush.Render(ctx.Square, ctx.Player.Position, Player.BodyCharacter);
 			logger.Info($"Player rendered in canvas {ctx.Square.Title}");
+
+			// render enemies
+			brush.Render(ctx.Square, ctx.Enemies.Select(x => x.Position).ToList(), Enemy.BodyCharacter);
+
+			// Show result path of path finding
+			brush.ShowPath(
+				ctx.Square,
+				solution.Path,
+				animated: true,
+				animationDelay: 10,
+				visibleLength: 40,
+				visibleFor: 300,
+				underlineTrail: true,
+				underlineChar: CharacterMap.LightTrail,
+				foregroundColor: ConsoleColor.Green,
+				backgroundColor: ConsoleColor.Cyan);
+
+			#endregion
 		}
 	}
 }

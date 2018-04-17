@@ -1,6 +1,6 @@
 ﻿namespace DrunkenMonk.Data.Enums
 {
-	public enum RenderMenuPosition
+	public enum RenderPosition
 	{
 		TopLeft,
 		TopRight,

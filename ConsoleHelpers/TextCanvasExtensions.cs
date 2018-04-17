@@ -130,7 +130,7 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			if (rowIndex == null)
 			{
-				for (int y = 0; y < canvas.Height - 2; y++)
+				for (int y = 0; y < canvas.ContentHeight; y++)
 				{
 					canvas.SetCursorPosition(0, y);
 					Console.Write(CharacterMap.Space.Repeat(canvas.ContentWidth));
@@ -139,7 +139,7 @@ namespace DrunkenMonk.ConsoleHelpers
 			}
 
 			// validation
-			if (rowIndex.Value > canvas.Height - 2 || rowIndex.Value < 0)
+			if (rowIndex.Value > canvas.ContentHeight || rowIndex.Value < 0)
 				throw new ArgumentOutOfRangeException(nameof(rowIndex), "Row index cannot overflow canvas's height");
 
 			canvas.SetCursorPosition(0, rowIndex.Value);

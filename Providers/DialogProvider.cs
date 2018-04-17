@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DrunkenMonk.Data;
 using DrunkenMonk.ConsoleHelpers;
+using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Constants;
 using DrunkenMonk.Data.Enums;
 using NLog;
@@ -82,6 +84,50 @@ namespace DrunkenMonk.Providers
 		}
 
 		// todo Implement PromtUser method
-		// todo Implement ShowNoification/overload for AskUser method
+
+
+		// todo Implement ShowNotification/overload for AskUser method
+		// todo Add overload taking string[] param for multiple-row message
+		// todo Add param for more display positions (center, top-left etc..)
+		/// <summary>
+		/// Shows one-row long message
+		/// </summary>
+		/// <param name="message"></param>
+		/// <param name="brush"></param>
+		/// <returns></returns>
+		public CancellationTokenSource ShowNotification(string message, PaintBrush brush)
+		{
+			CancellationTokenSource cts = new CancellationTokenSource();
+			Task.Run(() =>
+			{
+				Canvas notificationCanvas = new Canvas
+				{
+					Width = message.Length + 4,
+					Height = 5,
+					RenderPosition = RenderPosition.TopLeft
+				};
+				// render
+				brush.RenderCanvas(notificationCanvas);
+
+				for (int i = 0; i < message.Length; i++)
+					brush.Render(
+						notificationCanvas,
+						new Position(notificationCanvas.CenterXPosition - (int)Math.Ceiling(message.Length / 2.0) + i, 1),
+						message[i]);
+
+				// wait for cancelation
+				WaitHandle.WaitAll(new[] { cts.Token.WaitHandle });
+
+				// derender
+				brush.DerenderCanvas(notificationCanvas);
+			}, cts.Token);
+
+			return cts;
+		}
+
+		public CancellationToken ShowNotification(Func<string> animatedText, PaintBrush brush, TimeSpan interval)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

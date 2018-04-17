@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using DrunkenMonk.Data.Enums;
 
 namespace DrunkenMonk.Data.Base
 {
@@ -7,9 +8,65 @@ namespace DrunkenMonk.Data.Base
 	{
 		private string _title;
 
-		public int StartX { get; set; }
+		private int? _startX = null;
 
-		public int StartY { get; set; }
+		private int? _startY = null;
+
+		public int StartX
+		{
+			get
+			{
+				if (_startX != null)
+					return _startX.Value;
+
+				switch (RenderPosition)
+				{
+					case RenderPosition.TopLeft:
+						return Margin;
+					case RenderPosition.TopRight:
+						return Console.WindowWidth - Width + Margin;
+					case RenderPosition.Center:
+						return (Console.WindowWidth - Width) / 2;
+					case RenderPosition.BottomLeft:
+						return Margin;
+					case RenderPosition.BottomRight:
+						return Console.WindowWidth - Width - Margin;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			}
+			set => _startX = value;
+		}
+
+		public int StartY
+		{
+			get
+			{
+				if (_startY != null)
+					return _startY.Value;
+
+				switch (RenderPosition)
+				{
+					case RenderPosition.TopLeft:
+						return Margin;
+					case RenderPosition.TopRight:
+						return Margin;
+					case RenderPosition.Center:
+						return (Console.WindowHeight - Height) / 2;
+					case RenderPosition.BottomLeft:
+						return Console.WindowHeight - Height - Margin;
+					case RenderPosition.BottomRight:
+						return Console.WindowHeight - Height - Margin;
+					default:
+						throw new ArgumentOutOfRangeException();
+				}
+			}
+			set => _startY = value;
+		}
+
+		public RenderPosition RenderPosition { get; set; } = RenderPosition.Center;
+
+		public int Margin { get; set; } = 1;
 
 		public int Width { get; set; }
 
@@ -19,7 +76,9 @@ namespace DrunkenMonk.Data.Base
 
 		public int ContentHeight => Height - 2;
 
-		public char BorderChar { get; set; }
+		public int CenterXPosition => ContentWidth / 2;
+
+		//public char BorderChar { get; set; }
 
 		public string Title
 		{

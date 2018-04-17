@@ -41,12 +41,30 @@ namespace DrunkenMonk.ConsoleHelpers
 				DrawRectangle(canvas.StartX, canvas.StartY, canvas.Width, canvas.Height);
 
 				// Render title
-				canvas.SetCursorPosition(2, -1, false);
-				Console.Write(CharacterMap.Space + canvas.Title + CharacterMap.Space);
+				if (!string.IsNullOrEmpty(canvas.Title))
+				{
+					canvas.SetCursorPosition(2, -1, false);
+					Console.Write(CharacterMap.Space + canvas.Title + CharacterMap.Space);
+				}
 
 			}
 
 			logger.Trace($"Method {nameof(RenderCanvas)} ended");
+		}
+
+		public void DerenderCanvas(Canvas canvas)
+		{
+			for (int y = 0; y < canvas.Height; y++)
+			{
+				for (int x = 0; x < canvas.Width; x++)
+				{
+					lock (consoleGuardian)
+					{
+						canvas.SetCursorPosition(x - 1, y - 1, false);
+						Console.Write(CharacterMap.Space);
+					}
+				}
+			}
 		}
 
 		/// <summary>
@@ -399,8 +417,6 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			logger.Debug($"Drawing rectagle of {width} width and {height} height at {{{startX},{startY}}}");
 
-			// substract walls (2)
-			// LE becouse width & height contains start...
 			for (int y = startY; y < startY + height; y++)
 			{
 				for (int x = startX; x < startX + width; x++)
