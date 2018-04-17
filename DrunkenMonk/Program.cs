@@ -18,6 +18,8 @@ namespace DrunkenMonk
 {
 	public class Program
 	{
+		static object ConsoleStreamGuardian = new object();
+
 		public static void Main()
 		{
 			Logger logger = LogManager.GetCurrentClassLogger();
@@ -32,21 +34,19 @@ namespace DrunkenMonk
 				MovementLog = new TextCanvas()
 			};
 
-			PaintBrush brush = new PaintBrush();
+			PaintBrush brush = new PaintBrush(ConsoleStreamGuardian);
+
+			NPCProvider npcProvider = new NPCProvider();
 
 			// Path finder
 			PathFinderProvider pathFinder = new PathFinderProvider();
 
-			NPCProvider npcProvider = new NPCProvider();
-
-			Init(context, logger).Wait();
+			Init(context, brush, logger).Wait();
 
 			#region PathFinder for securing game playability
-
 			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(context.Square, context.Player.DifficultyLevel, logger);
-
-			// PathFinder V2
 			PathSolution solution;
+
 			do
 			{
 				context.Enemies = npcProvider.GenerateEnemies(context.Square, new List<Position>
@@ -55,25 +55,7 @@ namespace DrunkenMonk
 					context.Target
 				}, amountOfPeopleOnSquare);
 
-				bool[,] negativeSquare = context.Square.To2DBinaryArray(context.Enemies.Select(x => x.Position));
-
-				Context pathFinderContext = pathFinder
-					.CreateContext(
-						context.Player.Position,
-						context.Target,
-						negativeSquare);
-
-				pathFinderContext.Field = pathFinder.DeadFill(
-					pathFinderContext.Field,
-					context.Square,
-					brush,
-					new List<Position>
-					{
-						context.Player.Position,
-						context.Target
-					}, pathFinderContext);
-
-				solution = pathFinder.FindPath(pathFinderContext);
+				solution = PathFindingProcess(logger, context, brush, npcProvider, pathFinder);
 			} while (solution.Path.Count == 0);
 
 			#endregion
@@ -94,7 +76,7 @@ namespace DrunkenMonk
 
 			Timer timer = new Timer(state =>
 			{
-				lock (Console.Out)
+				lock (ConsoleStreamGuardian)
 				{
 					context.ScoreBoard.Clear();
 					context.ScoreBoard.WriteLine($"Current Time: {DateTime.Now: hh:mm:ss}");
@@ -136,59 +118,87 @@ namespace DrunkenMonk
 					switch (action)
 					{
 						case UserAction.DirectionUp:
-							{
-								newPlayerPosition.Y--;
-								newPlayerDirection = Direction.Up;
-								break;
-							}
+						{
+							newPlayerPosition.Y--;
+							newPlayerDirection = Direction.Up;
+							break;
+						}
 						case UserAction.DirectionDown:
-							{
-								newPlayerPosition.Y++;
-								newPlayerDirection = Direction.Down;
-								break;
-							}
+						{
+							newPlayerPosition.Y++;
+							newPlayerDirection = Direction.Down;
+							break;
+						}
 						case UserAction.DirectionLeft:
-							{
-								newPlayerPosition.X--;
-								newPlayerDirection = Direction.Left;
-								break;
-							}
+						{
+							newPlayerPosition.X--;
+							newPlayerDirection = Direction.Left;
+							break;
+						}
 						case UserAction.DirectionRight:
-							{
-								newPlayerPosition.X++;
-								newPlayerDirection = Direction.Right;
-								break;
-							}
+						{
+							newPlayerPosition.X++;
+							newPlayerDirection = Direction.Right;
+							break;
+						}
 						case UserAction.Reload:
-							{
-								Reload(context, timer, logger);
-								return;
-							}
+						{
+							Reload(context, brush, timer, logger);
+							return;
+						}
 						case UserAction.ShowPath:
-							{
-								/**
-									* TODO: Call PathFinder
-									* Use .To2DBinaryArray extension on Canvas
-								 */
-
-								break;
-							}
+						{
+							brush.ShowPath(
+								context.Square,
+								PathFindingProcess(logger, context, brush, npcProvider, pathFinder).Path,
+								animated: true,
+								animationDelay: 10,
+								visibleLength: 40,
+								visibleFor: 300,
+								underlineTrail: true,
+								underlineChar: CharacterMap.LightTrail,
+								foregroundColor: ConsoleColor.Green,
+								backgroundColor: ConsoleColor.Cyan);
+							break;
+						}
 						case UserAction.QuitGame:
-							{
-								cts.Cancel();
-								break;
-							}
+						{
+							cts.Cancel();
+							break;
+						}
 					}
-
 					#endregion
-
-					// TODO: Handle player's tripping
 
 					TripAndCollisionLogic(context, oldPosition, newPlayerPosition, newPlayerDirection, brush);
 
 					Thread.Sleep(configurations.GetMainDelay);
 				}, cts.Token);
 			} while (true);
+		}
+
+		private static PathSolution PathFindingProcess(Logger logger, GameContext context, PaintBrush brush, NPCProvider npcProvider, PathFinderProvider pathFinder)
+		{
+			bool[,] negativeSquare = context.Square.To2DBinaryArray(context.Enemies.Select(x => x.Position));
+
+			Context pathFinderContext = pathFinder
+				.CreateContext(
+					context.Player.Position,
+					context.Target,
+					negativeSquare);
+
+			// Speed-up for solution, where shortest path is key
+			pathFinderContext.Field = pathFinder.DeadFill(
+				pathFinderContext.Field,
+				context.Square,
+				brush,
+				new List<Position>
+				{
+						context.Player.Position,
+						context.Target
+				}, pathFinderContext);
+
+			PathSolution solution = pathFinder.FindPath(pathFinderContext);
+			return solution;
 		}
 
 		/// <summary>
@@ -294,11 +304,11 @@ namespace DrunkenMonk
 			}
 		}
 
-		private static void Reload(GameContext ctx, Timer timeTimer, Logger logger)
+		private static void Reload(GameContext ctx, PaintBrush brush, Timer timeTimer, Logger logger)
 		{
 			timeTimer.Change(UInt32.MaxValue, 0);
 
-			Init(ctx, logger).Wait();
+			Init(ctx, brush, logger).Wait();
 
 			int amountOfPeopleOnSquare = (int)GetAmountOfPeople(ctx.Square, ctx.Player.DifficultyLevel, logger);
 
@@ -311,8 +321,6 @@ namespace DrunkenMonk
 					ctx.Player.Position
 				},
 				amountOfPeopleOnSquare);
-
-			PaintBrush brush = new PaintBrush();
 
 			brush.Render(ctx.Square, ctx.Enemies.Select(x => x.Position).ToList(), Enemy.BodyCharacter);
 
@@ -339,40 +347,40 @@ namespace DrunkenMonk
 			{
 				case ConsoleKey.W:
 				case ConsoleKey.UpArrow:
-					{
-						return UserAction.DirectionUp;
-					}
+				{
+					return UserAction.DirectionUp;
+				}
 				case ConsoleKey.S:
 				case ConsoleKey.DownArrow:
-					{
-						return UserAction.DirectionDown;
-					}
+				{
+					return UserAction.DirectionDown;
+				}
 				case ConsoleKey.A:
 				case ConsoleKey.LeftArrow:
-					{
-						return UserAction.DirectionLeft;
-					}
+				{
+					return UserAction.DirectionLeft;
+				}
 				case ConsoleKey.D:
 				case ConsoleKey.RightArrow:
-					{
-						return UserAction.DirectionRight;
-					}
+				{
+					return UserAction.DirectionRight;
+				}
 				case ConsoleKey.R:
-					{
-						return UserAction.Reload;
-					}
+				{
+					return UserAction.Reload;
+				}
 				case ConsoleKey.Spacebar:
-					{
-						return UserAction.ShowPath;
-					}
+				{
+					return UserAction.ShowPath;
+				}
 				case ConsoleKey.Escape:
-					{
-						return UserAction.QuitGame;
-					}
+				{
+					return UserAction.QuitGame;
+				}
 				default:
-					{
-						return UserAction.NoAction;
-					}
+				{
+					return UserAction.NoAction;
+				}
 			}
 		}
 
@@ -398,20 +406,20 @@ namespace DrunkenMonk
 			switch (difficulty)
 			{
 				case DifficultyLevel.Easy:
-					{
-						amount *= random.Next(25, 35);
-						break;
-					}
+				{
+					amount *= random.Next(25, 35);
+					break;
+				}
 				case DifficultyLevel.Medium:
-					{
-						amount *= random.Next(36, 50);
-						break;
-					}
+				{
+					amount *= random.Next(36, 50);
+					break;
+				}
 				case DifficultyLevel.Hard:
-					{
-						amount *= random.Next(55, 65);
-						break;
-					}
+				{
+					amount *= random.Next(55, 65);
+					break;
+				}
 			}
 
 			logger.Debug($"The final amount of people of canvas {canvas.Title} is {amount}");
@@ -419,7 +427,7 @@ namespace DrunkenMonk
 			return amount;
 		}
 
-		public static async Task Init(GameContext ctx, Logger logger)
+		public static async Task Init(GameContext ctx, PaintBrush brush, Logger logger)
 		{
 			logger.Trace("Init method called");
 
@@ -503,13 +511,9 @@ namespace DrunkenMonk
 				},
 				Position = RenderMenuPosition.Center,
 				Margin = 1
-			});
+			}, brush);
 
 			logger.Debug($"User picked {ctx.Player.DifficultyLevel.ToString()}");
-
-			// TODO: Implement Noification Message for DialogProvider
-
-			PaintBrush brush = new PaintBrush();
 
 			// Draws Walls for game field
 			brush.RenderCanvas(ctx.Square);

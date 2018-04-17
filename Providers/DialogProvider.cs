@@ -24,19 +24,17 @@ namespace DrunkenMonk.Providers
 		/// </summary>
 		/// <typeparam name="TReturnType"></typeparam>
 		/// <param name="menu"></param>
+		/// <param name="brush"></param>
 		/// <returns></returns>
-		public async Task<TReturnType> AskUser<TReturnType>(Menu<TReturnType> menu)
+		public async Task<TReturnType> AskUser<TReturnType>(Menu<TReturnType> menu, PaintBrush brush)
 		{
 			logger.Trace($"Method {nameof(AskUser)} called");
 
 			Console.Clear();
 
-			PaintBrush brush = new PaintBrush();
-
 			brush.RenderMenu(menu);
 
 			ConsoleKey key;
-
 			do
 			{
 				key = await Task.Run(() => Console.ReadKey(true).Key);
@@ -83,6 +81,7 @@ namespace DrunkenMonk.Providers
 			return menu.SelectedChoice.Key;
 		}
 
-		// todo implement PromtUser method
+		// todo Implement PromtUser method
+		// todo Implement ShowNoification/overload for AskUser method
 	}
 }

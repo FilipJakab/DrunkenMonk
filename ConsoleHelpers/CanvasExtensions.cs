@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using DrunkenMonk.Data;
 using DrunkenMonk.Data.Base;
 using DrunkenMonk.Data.Constants;
 using DrunkenMonk.Data.Enums;
+using DrunkenMonk.Data.Exceptions;
 
 namespace DrunkenMonk.ConsoleHelpers
 {
@@ -44,20 +46,24 @@ namespace DrunkenMonk.ConsoleHelpers
 		/// <param name="validate">Return true if position is valid</param>
 		/// <param name="brush"></param>
 		/// <param name="isTrip"></param>
-		/// <returns>Last safe position</returns>
+		/// <param name="color"></param>
+		/// <returns></returns>
 		public static SimulationResult ExecuteSimulation(
 			this Canvas canvas,
 			Simulation simulation,
 			Func<Position, bool> validate,
 			PaintBrush brush,
-			bool isTrip = false)
+			bool isTrip = false,
+			ConsoleColor? color = null)
 		{
-
 			// BassePosition is obstacle
 			//brush.Derender(canvas, simulation.BasePosition);
 			Position currentPosition = Position.Copy(simulation.BasePosition);
 
 			SimulationResult result = new SimulationResult();
+
+			ConsoleColor baseForegroundColor = Console.ForegroundColor;
+			ConsoleColor baseBackgroundColor = Console.BackgroundColor;
 
 			void SimulationIteration(Action<Position> modification)
 			{
@@ -94,56 +100,59 @@ namespace DrunkenMonk.ConsoleHelpers
 			switch (simulation.Direction)
 			{
 				case Direction.Down:
+				{
+					for (int i = 0; i < simulation.Difference; i++)
 					{
-						for (int i = 0; i < simulation.Difference; i++)
-						{
-							SimulationIteration(position => position.Y++);
+						SimulationIteration(position => position.Y++);
 
-							if (!result.HasSuccessfulyFinished)
-								return result;
-						}
-						break;
+						if (!result.HasSuccessfulyFinished)
+							goto End;
 					}
+					break;
+				}
 				case Direction.Up:
+				{
+					for (int i = 0; i < simulation.Difference; i++)
 					{
-						for (int i = 0; i < simulation.Difference; i++)
-						{
-							SimulationIteration(position => position.Y--);
+						SimulationIteration(position => position.Y--);
 
-							if (!result.HasSuccessfulyFinished)
-							{
-								return result;
-							}
-						}
-						break;
+						if (!result.HasSuccessfulyFinished)
+							goto End;
 					}
+					break;
+				}
 				case Direction.Left:
+				{
+					for (int i = 0; i < simulation.Difference; i++)
 					{
-						for (int i = 0; i < simulation.Difference; i++)
-						{
-							SimulationIteration(position => position.X--);
+						SimulationIteration(position => position.X--);
 
-							if (!result.HasSuccessfulyFinished)
-								return result;
-						}
-						break;
+						if (!result.HasSuccessfulyFinished)
+							goto End;
 					}
+					break;
+				}
 				case Direction.Right:
+				{
+					for (int i = 0; i < simulation.Difference; i++)
 					{
-						for (int i = 0; i < simulation.Difference; i++)
-						{
-							SimulationIteration(position => position.X++);
+						SimulationIteration(position => position.X++);
 
-							if (!result.HasSuccessfulyFinished)
-								return result;
-						}
-						break;
+						if (!result.HasSuccessfulyFinished)
+							goto End;
 					}
+					break;
+				}
 			}
 
 			brush.Render(canvas, currentPosition, simulation.RenderCharacter);
 
 			result.HasSuccessfulyFinished = true;
+
+			End:
+
+			Console.ForegroundColor = baseForegroundColor;
+			Console.BackgroundColor = baseBackgroundColor;
 
 			return result;
 		}
@@ -169,6 +178,36 @@ namespace DrunkenMonk.ConsoleHelpers
 			}
 
 			return array;
+		}
+
+		/// <summary>
+		/// A Generic method allowing to convert Array of positions(even classes deriving from position) to 2D
+		/// </summary>
+		/// <typeparam name="TX"></typeparam>
+		/// <typeparam name="TY"></typeparam>
+		/// <param name="canvas"></param>
+		/// <param name="positions"></param>
+		/// <param name="transformation"></param>
+		/// <returns></returns>
+		public static TX[,] To2DArray<TX, TY>(this Canvas canvas, IEnumerable<TY> positions, Func<TY, TX> transformation)
+			where TY : class
+		{
+			// Method with no current usage, just playing with some generics...
+
+			// Check if TY inherits from Position class
+			Type baseType = typeof(TY).BaseType;
+			if (baseType == null || baseType != typeof(Position))
+				throw new InvalidTypeException();
+
+			TX[,] toReturn = new TX[canvas.ContentHeight, canvas.ContentWidth];
+
+			foreach (TY position in positions)
+			{
+				Position converted = (Position)(object)position;
+				toReturn[converted.Y, converted.X] = transformation(position);
+			}
+
+			return toReturn;
 		}
 	}
 }

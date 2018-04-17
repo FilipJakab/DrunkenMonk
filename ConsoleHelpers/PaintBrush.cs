@@ -16,9 +16,13 @@ namespace DrunkenMonk.ConsoleHelpers
 
 		private readonly bool leaveTrail;
 
-		public PaintBrush(bool leaveTrail = false)
+		private object consoleGuardian;
+
+		public PaintBrush(object consoleGuardian, bool leaveTrail = false)
 		{
 			logger = LogManager.GetCurrentClassLogger();
+
+			this.consoleGuardian = consoleGuardian;
 
 			this.leaveTrail = leaveTrail;
 		}
@@ -32,14 +36,33 @@ namespace DrunkenMonk.ConsoleHelpers
 			logger.Trace($"Method {nameof(RenderCanvas)} called");
 			logger.Info($"Rendering canvas {canvas.Title}");
 
-			DrawRectangle(canvas.StartX, canvas.StartY, canvas.Width, canvas.Height);
+			lock (consoleGuardian)
+			{
+				DrawRectangle(canvas.StartX, canvas.StartY, canvas.Width, canvas.Height);
 
-			canvas.SetCursorPosition(2, -1, false);
-			Console.Write(CharacterMap.Space + canvas.Title + CharacterMap.Space);
+				// Render title
+				canvas.SetCursorPosition(2, -1, false);
+				Console.Write(CharacterMap.Space + canvas.Title + CharacterMap.Space);
+
+			}
 
 			logger.Trace($"Method {nameof(RenderCanvas)} ended");
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="canvas"></param>
+		/// <param name="path"></param>
+		/// <param name="visibleLength"></param>
+		/// <param name="foregroundColor"></param>
+		/// <param name="backgroundColor"></param>
+		/// <param name="animated"></param>
+		/// <param name="underlineTrail"></param>
+		/// <param name="underlineChar"></param>
+		/// <param name="animationDelay"></param>
+		/// <param name="visibleFor"></param>
+		/// <param name="renderChar"></param>
 		public void ShowPath(
 			Canvas canvas,
 			List<Position> path,
@@ -56,36 +79,42 @@ namespace DrunkenMonk.ConsoleHelpers
 			logger.Trace($"Method {nameof(ShowPath)} called");
 			logger.Info($"Rendering path of {path.Count} elements on {canvas.Title} canvas");
 
-			// No need of derendering => will derendered as visiblePath is rendering/derendering
-			if (underlineTrail)
-				Render(canvas, path, underlineChar ?? CharacterMap.LightTrail);
-
-			for (int i = 0; i < path.Count; i++)
+			lock (consoleGuardian)
 			{
-				Render(canvas, path[i], renderChar,
-					foregroundColor ?? Console.ForegroundColor,
-					foregroundColor ?? Console.ForegroundColor);
+				// No need of derendering => will derendered as visiblePath is rendering/derendering
+				if (underlineTrail)
+					Render(canvas, path, underlineChar ?? CharacterMap.LightTrail);
 
-				if (animated)
-					Thread.Sleep(animationDelay);
+				for (int i = 0; i < path.Count; i++)
+				{
+					Render(canvas, path[i], renderChar,
+						foregroundColor ?? Console.ForegroundColor,
+						backgroundColor ?? Console.BackgroundColor);
 
-				if (i >= visibleLength)
-					Derender(canvas, path[i - visibleLength], underlineTrail, underlineChar);
-			}
+					if (animated)
+						Thread.Sleep(animationDelay);
 
-			for (int i = path.Count - 1 - visibleLength; i < path.Count; i++)
-			{
-				if (animated)
-					Thread.Sleep(animationDelay);
+					if (i >= visibleLength)
+						Derender(canvas, path[i - visibleLength], underlineTrail, underlineChar);
+				}
 
-				Derender(canvas, path[i], underlineTrail, underlineChar);
+				for (int i = path.Count - 1 - visibleLength; i < path.Count; i++)
+				{
+					if (animated)
+						Thread.Sleep(animationDelay);
+
+					Derender(canvas, path[i], underlineTrail, underlineChar);
+				}
 			}
 
 			Thread.Sleep(visibleFor);
 
-			// Derender remaining positions
-			foreach (var position in path)
-				Derender(canvas, position);
+			lock (consoleGuardian)
+			{
+				// Derender remaining positions
+				foreach (var position in path)
+					Derender(canvas, position);
+			}
 
 			logger.Trace($"Mathod call {nameof(ShowPath)} ended");
 		}
@@ -104,11 +133,14 @@ namespace DrunkenMonk.ConsoleHelpers
 			// Render title
 			if (!string.IsNullOrEmpty(menu.Question))
 			{
-				Console.SetCursorPosition(
-					menu.CenterXPosition - (menu.Question.Length / 2),
-					startY++
-				);
-				Console.Write(menu.Question);
+				lock (consoleGuardian)
+				{
+					Console.SetCursorPosition(
+						menu.CenterXPosition - (menu.Question.Length / 2),
+						startY++
+					);
+					Console.Write(menu.Question);
+				}
 			}
 
 			// RenderMenu Choices
@@ -126,12 +158,18 @@ namespace DrunkenMonk.ConsoleHelpers
 					Console.Write(menu.LeftSelector);
 				}
 
-				Console.SetCursorPosition(menu.CenterXPosition - (option.Value.Length / 2), startY++);
-				Console.Write(optionFormat, option.Value);
+				lock (consoleGuardian)
+				{
+					Console.SetCursorPosition(menu.CenterXPosition - (option.Value.Length / 2), startY++);
+					Console.Write(optionFormat, option.Value);
+				}
 
 				if (!isSelected) continue;
 
-				Console.Write(menu.RightSelector.PadLeft(menu.RightSelector.Length + menu.SelectorDistance));
+				lock (consoleGuardian)
+				{
+					Console.Write(menu.RightSelector.PadLeft(menu.RightSelector.Length + menu.SelectorDistance));
+				}
 			}
 
 			logger.Trace($"Method {nameof(RenderMenu)} ended");
@@ -166,17 +204,20 @@ namespace DrunkenMonk.ConsoleHelpers
 			// Last selected option's index
 			int index = menu.Choices.ToList().IndexOf(menu.SelectedChoice);
 
-			// Erase left selector
-			Console.SetCursorPosition(
-				GetLeftSelectorXPos(menu),
-				menu.StartY + 1 + index);
-			Console.Write(CharacterMap.Space);
+			lock (consoleGuardian)
+			{
+				// Erase left selector
+				Console.SetCursorPosition(
+					GetLeftSelectorXPos(menu),
+					menu.StartY + 1 + index);
+				Console.Write(CharacterMap.Space);
 
-			// Erase right selector
-			Console.SetCursorPosition(
-				GetRightSelectorXPos(menu),
-				menu.StartY + 1 + index);
-			Console.Write(CharacterMap.Space);
+				// Erase right selector
+				Console.SetCursorPosition(
+					GetRightSelectorXPos(menu),
+					menu.StartY + 1 + index);
+				Console.Write(CharacterMap.Space);
+			}
 
 			logger.Trace($"Method {nameof(DeselectChoice)} ended");
 		}
@@ -194,15 +235,18 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			int newIndex = menu.Choices.ToList().IndexOf(menu.SelectedChoice);
 
-			Console.SetCursorPosition(
-				GetLeftSelectorXPos(menu),
-				menu.StartY + 1 + newIndex);
-			Console.Write(menu.LeftSelector);
+			lock (consoleGuardian)
+			{
+				Console.SetCursorPosition(
+					GetLeftSelectorXPos(menu),
+					menu.StartY + 1 + newIndex);
+				Console.Write(menu.LeftSelector);
 
-			Console.SetCursorPosition(
-				GetRightSelectorXPos(menu),
-				menu.StartY + 1 + newIndex);
-			Console.Write(menu.RightSelector);
+				Console.SetCursorPosition(
+					GetRightSelectorXPos(menu),
+					menu.StartY + 1 + newIndex);
+				Console.Write(menu.RightSelector);
+			}
 
 			logger.Trace($"Method {nameof(SelectChoice)} ended");
 		}
@@ -224,11 +268,14 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			logger.Debug($"Derendering position {{{position.X}, {position.Y}}} in canvas {canvas.Title}");
 
-			canvas.SetCursorPosition(position.X, position.Y);
-
 			char renderChar = leaveTrail ? (trailChar ?? CharacterMap.LightTrail) : CharacterMap.Space;
 
-			Console.Write(renderChar);
+			lock (consoleGuardian)
+			{
+				canvas.SetCursorPosition(position.X, position.Y);
+
+				Console.Write(renderChar);
+			}
 		}
 
 		public void Derender(Canvas canvas, IEnumerable<Position> obstacles)
@@ -241,8 +288,11 @@ namespace DrunkenMonk.ConsoleHelpers
 
 			foreach (Position position in positions)
 			{
-				canvas.SetCursorPosition(position.X, position.Y);
-				Console.Write(CharacterMap.Space);
+				lock (consoleGuardian)
+				{
+					canvas.SetCursorPosition(position.X, position.Y);
+					Console.Write(CharacterMap.Space);
+				}
 			}
 		}
 
@@ -263,8 +313,11 @@ namespace DrunkenMonk.ConsoleHelpers
 			{
 				for (int x = 0; x < canvas.ContentWidth; x++)
 				{
-					canvas.SetCursorPosition(x, y);
-					Console.Write(CharacterMap.Space);
+					lock (consoleGuardian)
+					{
+						canvas.SetCursorPosition(x, y);
+						Console.Write(CharacterMap.Space);
+					}
 				}
 			}
 		}
@@ -279,19 +332,22 @@ namespace DrunkenMonk.ConsoleHelpers
 			ConsoleColor baseForegroundColor = Console.ForegroundColor;
 			ConsoleColor baseBackgroundColor = Console.BackgroundColor;
 
-			Console.BackgroundColor = backgroundColor ?? baseBackgroundColor;
-			Console.ForegroundColor = foregroundColor ?? baseForegroundColor;
-
 			logger.Trace("Rendering position");
 
 			logger.Debug($"Rendering character at {{{position.X}, {position.Y}}} in canvas: {canvas.Title}");
 
-			canvas.SetCursorPosition(position.X, position.Y);
+			lock (consoleGuardian)
+			{
+				Console.BackgroundColor = backgroundColor ?? baseBackgroundColor;
+				Console.ForegroundColor = foregroundColor ?? baseForegroundColor;
 
-			Console.Write(character);
+				canvas.SetCursorPosition(position.X, position.Y);
 
-			Console.ForegroundColor = baseForegroundColor;
-			Console.BackgroundColor = baseBackgroundColor;
+				Console.Write(character);
+
+				Console.ForegroundColor = baseForegroundColor;
+				Console.BackgroundColor = baseBackgroundColor;
+			}
 		}
 
 		public void Render(
@@ -349,40 +405,38 @@ namespace DrunkenMonk.ConsoleHelpers
 			{
 				for (int x = startX; x < startX + width; x++)
 				{
-					/**
-					 * Console.SetCursorPosition(x, y);
-					 * is separated into each branch because otherwise it would be being set each loop iteration...
-					 * Thats why is this solution better - faster (I think) :)
-					 */
-					if (y == startY && x == startX)
+					lock (consoleGuardian)
 					{
-						Console.SetCursorPosition(x, y);
-						Console.Write(CharacterMap.TopLeftCornerWall);
-					}
-					else if (y == startY && x == startX + width - 1)
-					{
-						Console.SetCursorPosition(x, y);
-						Console.Write(CharacterMap.TopRightCornerWall);
-					}
-					else if (y == startY + height - 1 && x == startX)
-					{
-						Console.SetCursorPosition(x, y);
-						Console.Write(CharacterMap.DownLeftCornerWall);
-					}
-					else if (y == startY + height - 1 && x == startX + width - 1)
-					{
-						Console.SetCursorPosition(x, y);
-						Console.Write(CharacterMap.DownRightCornerWall);
-					}
-					else if (y == startY || y == startY + height - 1)
-					{
-						Console.SetCursorPosition(x, y);
-						Console.Write(CharacterMap.HorizontalWall);
-					}
-					else if (x == startX || x == startX + width - 1)
-					{
-						Console.SetCursorPosition(x, y);
-						Console.Write(CharacterMap.VerticalWall);
+						if (y == startY && x == startX)
+						{
+							Console.SetCursorPosition(x, y);
+							Console.Write(CharacterMap.TopLeftCornerWall);
+						}
+						else if (y == startY && x == startX + width - 1)
+						{
+							Console.SetCursorPosition(x, y);
+							Console.Write(CharacterMap.TopRightCornerWall);
+						}
+						else if (y == startY + height - 1 && x == startX)
+						{
+							Console.SetCursorPosition(x, y);
+							Console.Write(CharacterMap.DownLeftCornerWall);
+						}
+						else if (y == startY + height - 1 && x == startX + width - 1)
+						{
+							Console.SetCursorPosition(x, y);
+							Console.Write(CharacterMap.DownRightCornerWall);
+						}
+						else if (y == startY || y == startY + height - 1)
+						{
+							Console.SetCursorPosition(x, y);
+							Console.Write(CharacterMap.HorizontalWall);
+						}
+						else if (x == startX || x == startX + width - 1)
+						{
+							Console.SetCursorPosition(x, y);
+							Console.Write(CharacterMap.VerticalWall);
+						}
 					}
 				}
 			}
