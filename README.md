@@ -1,5 +1,5 @@
 ## DrunkenMonk
-`Drunken Monk Challange` dedrived from [KEEN|MATE](https://github.com/KeenMate) [training repository](https://github.com/KeenMate/training)
+`Drunken Monk Challange` derived from [KEEN|MATE](https://github.com/KeenMate) [training repository](https://github.com/KeenMate/training)
 
 - Should be stable by now (`v1.0.0`)
   - `PathFinding` algorithm implemented in the most basic way
